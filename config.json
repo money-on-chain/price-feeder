@@ -1,0 +1,47 @@
+{
+  "app_mode": "MoC",
+  "block_expiration": 300,
+  "interval": 60,
+  "timeout_web3": 60,
+  "timeout_request": 10,
+  "price_variation_accepted": 0.0005,
+  "price_fetchers": ["bitstamp", "bitfinex", "kraken", "coinbase"],
+  "price_ponderations": [0.2138, 0.2782, 0.1605, 0.3475],
+  "price_rif_fetchers": ["bithumbpro", "bitfinex"],
+  "price_rif_ponderations": [0.5, 0.5],
+  "min_volume": 0.0,
+  "networks": {
+    "local": {
+      "uri": "http://192.168.56.2:8545",
+      "network_id": 123456,
+      "accounts": [
+        {
+          "address": "0x0e424e9a8598a55918e12de47172f3180c4b4e13",
+          "private_key":  "0x9e790b185e5b7f11f2924c7b809936866c38ed3ab3f33e0fbd3cfe791c2cdbd6"
+        }
+      ],
+      "addresses": {
+        "PriceFeed": "0x3442F63Ed9FeF9b9c224Ef58519c588804918bA2",
+        "MoCMedianizer": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA"
+      }
+
+    },
+    "regtest": {
+      "uri": "http://192.168.56.2:4444",
+      "network_id": 33,
+      "accounts": [
+        {
+          "address": "0x0e424e9a8598a55918e12de47172f3180c4b4e13",
+          "private_key":  "0x9e790b185e5b7f11f2924c7b809936866c38ed3ab3f33e0fbd3cfe791c2cdbd6"
+        }
+      ],
+      "addresses": {
+        "PriceFeed": "0x3442F63Ed9FeF9b9c224Ef58519c588804918bA2",
+        "MoCMedianizer": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA"
+      }
+
+    }
+
+  }
+
+}

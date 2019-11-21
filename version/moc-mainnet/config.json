@@ -1,0 +1,29 @@
+{
+  "app_mode": "MoC",
+  "block_expiration": 300,
+  "interval": 60,
+  "timeout_web3": 60,
+  "timeout_request": 10,
+  "price_variation_accepted": 0.0005,
+  "price_fetchers": ["bitstamp", "bitfinex", "kraken", "coinbase"],
+  "price_ponderations": [0.2138, 0.2782, 0.1605, 0.3475],
+  "price_rif_fetchers": ["bithumbpro", "bitfinex"],
+  "price_rif_ponderations": [0.5, 0.5],
+  "min_volume": 0.0,
+  "networks": {
+    "local": {
+      "uri": "http://10.0.0.10:4444",
+      "network_id": 30,
+      "accounts": [
+        {
+          "address": "0xfDB628524AD95c95a2C1f8dA9b8Bd92b6478CF6F",
+          "private_key":  ""
+        }
+      ],
+      "addresses": {
+        "PriceFeed": "0xfE05Ee3d651670F807Db7dD56e1E0FCBa29B234a",
+        "MoCMedianizer": "0x7B19bb8e6c5188eC483b784d6fB5d807a77b21bF"
+      }
+    }
+  }
+}
