@@ -5,11 +5,12 @@
   "timeout_web3": 60,
   "timeout_request": 10,
   "price_variation_accepted": 0.0005,
-  "price_fetchers": ["bitstamp", "bitfinex", "kraken", "coinbase"],
-  "price_ponderations": [0.2138, 0.2782, 0.1605, 0.3475],
-  "price_rif_fetchers": ["bithumbpro", "bitfinex"],
-  "price_rif_ponderations": [0.5, 0.5],
-  "min_volume": 0.0,
+  "price_engines": [
+    {"name": "bitstamp", "ponderation": 0.2138, "min_volume":  0.0, "max_delay": 0},
+    {"name": "bitfinex", "ponderation": 0.2782, "min_volume":  0.0, "max_delay": 0},
+    {"name": "kraken", "ponderation": 0.1605, "min_volume":  0.0, "max_delay": 0},
+    {"name": "coinbase", "ponderation": 0.3475, "min_volume":  0.0, "max_delay": 0}
+  ],
   "networks": {
     "local": {
       "uri": "http://192.168.56.2:8545",
