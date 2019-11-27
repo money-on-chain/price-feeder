@@ -38,7 +38,7 @@ class ContractManager(NodeManager):
     def __init__(self, config_options, network_nm):
         self.options = config_options
         self.PriceFeed = None
-        super(NodeManager, self).__init__(options=config_options, network=network_nm)
+        super().__init__(options=config_options, network=network_nm)
 
     def connect_contract(self):
         self.connect_node()
@@ -78,6 +78,10 @@ class ContractManager(NodeManager):
 
     @staticmethod
     def aws_put_metric_heart_beat(value):
+
+        if 'AWS_ACCESS_KEY_ID' not in os.environ:
+            return
+
         # Create CloudWatch client
         cloudwatch = boto3.client('cloudwatch')
 
@@ -111,15 +115,11 @@ class PriceFeederJob:
         config_options['build_dir'] = build_dir_nm
         self.options = config_options
 
-        #self.nm = NodeManager(options=config_options, network=network_nm)
         self.cm = ContractManager(config_options, network_nm)
 
-        if self.options['app_mode'] == 'MoC':
-            self.price_source = PriceEngines(self.options['price_engines'], log=log)
-        elif self.options['app_mode'] == 'rrc20':
-            raise Exception("Error! Config app_mode not recognize!")
-        else:
-            raise Exception("Error! Config app_mode not recognize!")
+        self.price_source = PriceEngines(self.options['price_engines'], log=log)
+        if self.options['app_mode'] == 'rrc20':
+            self.price_source_rif = PriceEngines(self.options['price_engines_rif'], log=log)
 
     @staticmethod
     def options_from_config(filename='config.json'):
@@ -130,29 +130,47 @@ class PriceFeederJob:
 
         return config_options
 
+    def get_price_btc(self):
+
+        return self.price_source.prices_weighted_median()
+
+    def get_price_rif(self):
+
+        btc_usd_price = self.price_source.prices_weighted_median()
+        btc_rif_price = self.price_source_rif.get_mean()
+
+        usd_rif_price = btc_rif_price * btc_usd_price
+
+        return usd_rif_price
+
     def price_feed(self):
 
         last_price = self.last_price
-        price_variation_accepted = self.options['price_variation_accepted'] * last_price
+        price_variation_accepted = self.options['price_variation_write_blockchain'] * last_price
         min_price = abs(last_price - price_variation_accepted)
         max_price = last_price + price_variation_accepted
 
-        price_medianizer = self.price_source.prices_weighted_median()
+        if self.options['app_mode'] == 'MoC':
+            price_no_precision = self.get_price_btc()
+        elif self.options['app_mode'] == 'rrc20':
+            price_no_precision = self.get_price_rif()
+        else:
+            raise Exception("Error! Config app_mode not recognize!")
 
-        price_to_set = price_medianizer * 10 ** 18
+        price_to_set = price_no_precision * 10 ** 18
         log.debug("Last price: [{0}] Min: [{1}] Max: [{2}] New price: [{3}]".format(last_price,
                                                                                     min_price,
                                                                                     max_price,
-                                                                                    price_medianizer))
-        if price_medianizer < min_price or price_medianizer > max_price:
+                                                                                    price_no_precision))
+        if price_no_precision < min_price or price_no_precision > max_price:
             self.cm.post_price(price_to_set)
         else:
-            log.info("WARNING! NOT SETTING is the same to last +- variation! [{0}]".format(price_medianizer))
+            log.info("WARNING! NOT SETTING is the same to last +- variation! [{0}]".format(price_no_precision))
             self.cm.aws_put_metric_heart_beat(1)
         
-        self.last_price = price_medianizer
+        self.last_price = price_no_precision
 
-        return price_medianizer
+        return price_no_precision
 
     def job_price_feed(self):
 
@@ -162,7 +180,6 @@ class PriceFeederJob:
             log.error(e, exc_info=True)
 
     def add_jobs(self):
-
         self.tl._add_job(self.job_price_feed, datetime.timedelta(seconds=self.options['interval']))
 
     def time_loop_start(self):

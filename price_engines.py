@@ -2,6 +2,7 @@ import requests
 import datetime
 from statistics import median, mean
 import numpy as np
+from pprint import pformat
 
 
 def weighted_median(values, weights):
@@ -13,15 +14,15 @@ weighted median is computed as follows:
     sorted values = [0, 1, 3] and corresponding sorted weights = [0.6,     0.1, 0.3] the 0.5 point on
     weight corresponds to the first item which is 0. so the weighted     median is 0.'''
 
-    #convert the weights into probabilities
+    # convert the weights into probabilities
     sum_weights = sum(weights)
     weights = np.array([(w*1.0)/sum_weights for w in weights])
-    #sort values and weights based on values
+    # sort values and weights based on values
     values = np.array(values)
     sorted_indices = np.argsort(values)
     values_sorted  = values[sorted_indices]
     weights_sorted = weights[sorted_indices]
-    #select the median point
+    # select the median point
     it = np.nditer(weights_sorted, flags=['f_index'])
     accumulative_probability = 0
     median_index = -1
@@ -128,7 +129,7 @@ class CoinBaseBTCUSD(PriceEngineBase):
     name = "coinbase_btc_usd"
     description = "Coinbase"
     #uri = "https://api.coinbase.com/v2/prices/BTC-USD/buy"
-    uri = "https://api.coinbase.com/v2/prices/spot?currency=US"
+    uri = "https://api.coinbase.com/v2/prices/spot?currency=USD"
     convert = "BTC_USD"
 
     @staticmethod
@@ -382,9 +383,9 @@ class PriceEngines(object):
 
         return prices
 
-    def get_mean(self):
+    def get_mean(self, session=None):
 
-        f_prices = self.fetch_prices()
+        f_prices = self.fetch_prices(session=session)
         prices = list()
         for f_price in f_prices:
             price = f_price["price"]
@@ -392,9 +393,9 @@ class PriceEngines(object):
 
         return mean(prices)
 
-    def get_weighted(self):
+    def get_weighted(self, session=None):
 
-        f_prices = self.fetch_prices()
+        f_prices = self.fetch_prices(session=session)
 
         missing_portions = 0.0
 
@@ -418,6 +419,9 @@ class PriceEngines(object):
             portion = pr["ponderation"] + eq_missing_portions
             pr["price_ponderation"] = portion
             pr["price_ponderated"] = pr["price"] * portion
+
+        self.log.info(f_prices)
+        self.log.info(pformat(f_prices))
 
         return f_prices
 

@@ -95,6 +95,16 @@ class NodeManager(object):
         return self.web3.eth.gasPrice
 
     @property
+    def minimum_gas_price(self):
+        """ Gas Price """
+        return Web3.toInt(hexstr=self.web3.eth.getBlock('latest').minimumGasPrice)
+
+    @property
+    def minimum_gas_price_fixed(self):
+        """ Gas Price """
+        return 60000000
+
+    @property
     def block_number(self):
         """ Las block number """
         return self.web3.eth.blockNumber
@@ -136,7 +146,7 @@ class NodeManager(object):
 
         transaction = dict(chainId=self.options['networks'][network]['network_id'],
                            nonce=nonce,
-                           gasPrice=self.gas_price,
+                           gasPrice=self.minimum_gas_price_fixed,
                            gas=100000,
                            to=to_address,
                            value=value)
@@ -162,7 +172,7 @@ class NodeManager(object):
 
         transaction_dict = dict(chainId=self.options['networks'][network]['network_id'],
                                 nonce=nonce,
-                                gasPrice=self.gas_price,
+                                gasPrice=self.minimum_gas_price_fixed,
                                 gas=gas_limit,
                                 value=value)
 
@@ -211,7 +221,7 @@ class NodeManager(object):
 
         transaction_dict = {'chainId': self.options['networks'][network]['network_id'],
                             'nonce': nonce,
-                            'gasPrice': self.gas_price,
+                            'gasPrice': self.minimum_gas_price_fixed,
                             'gas': gas_limit,
                             'value': tx_value}
 
@@ -259,7 +269,7 @@ class NodeManager(object):
 
         transaction_dict = {'chainId': self.options['networks'][network]['network_id'],
                             'nonce': nonce,
-                            'gasPrice': self.gas_price,
+                            'gasPrice': self.minimum_gas_price_fixed,
                             'gas': gas_limit,
                             'value': tx_value}
 
