@@ -104,3 +104,7 @@ docker run --rm --name price_feeder_1 price_feeder
 ```
 
 
+## Price Ponderation
+
+(Price ponderation and tickers
+)[https://github.com/money-on-chain/price-feeder/blob/master/PRICE_PONDERATION.md]
