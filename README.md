@@ -104,9 +104,3 @@ docker run --rm --name price_feeder_1 price_feeder
 ```
 
 
-
-## API tickers used
-
-(API PRICE BTCUSD)[API_PRICE_BTCUSD.md] 
-
-(API PRICE RIFUSD)[API_PRICE_RIF.md]

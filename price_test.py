@@ -363,14 +363,14 @@ if __name__ == '__main__':
         {"name": "test_16", "ponderation": 0.1605, "min_volume": 0.0, "max_delay": 0}
     ]
 
-    pr_engine = PriceEngines(price_options, engines_names=engines_names_3)
+    pr_engine = PriceEngines(price_options, engines_names=engines_names_4)
     w_prices = pr_engine.get_weighted()
     w_median = pr_engine.get_weighted_median(w_prices)
 
     md_header = '''
-    | Name        | Price        | Ponderation    | Price Ponderated  | Original Ponderation |
-    | :--------:  | :----------- | ------------   | ----------------- |--------------------- |
-            '''
+| Name        | Price        | Ponderation    | Price Ponderated  | Original Ponderation |
+| :--------:  | :----------- | ------------   | ----------------- |--------------------- |
+'''
     print(md_header)
 
     for w_price in w_prices:
