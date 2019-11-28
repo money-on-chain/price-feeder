@@ -420,7 +420,6 @@ class PriceEngines(object):
             pr["price_ponderation"] = portion
             pr["price_ponderated"] = pr["price"] * portion
 
-        self.log.info(f_prices)
         self.log.info(pformat(f_prices))
 
         return f_prices
