@@ -255,6 +255,57 @@ class BittrexBTCUSD(PriceEngineBase):
         return d_price_info
 
 
+class GeminiBTCUSD(PriceEngineBase):
+    name = "gemini_btc_usd"
+    description = "Gemini"
+    uri = "https://api.gemini.com/v1/pubticker/BTCUSD"
+    convert = "BTC_USD"
+
+    @staticmethod
+    def map(response_json):
+        d_price_info = dict()
+        d_price_info['price'] = float(response_json['last'])
+        d_price_info['volume'] = 0.0
+        d_price_info['timestamp'] = datetime.datetime.now()
+
+        return d_price_info
+
+
+class OkCoinBTCUSD(PriceEngineBase):
+    name = "okcoin_btc_usd"
+    description = "OkCoin"
+    uri = "https://www.okcoin.com/api/spot/v3/instruments/BTC-USD/ticker"
+    convert = "BTC_USD"
+
+    @staticmethod
+    def map(response_json):
+        d_price_info = dict()
+        d_price_info['price'] = float(response_json['last'])
+        d_price_info['volume'] = 0.0
+        d_price_info['timestamp'] = datetime.datetime.now()
+
+        return d_price_info
+
+
+class ItBitBTCUSD(PriceEngineBase):
+    name = "itbit_btc_usd"
+    description = "ItBit"
+    uri = "https://api.itbit.com/v1/markets/XBTUSD/ticker"
+    convert = "BTC_USD"
+
+    @staticmethod
+    def map(response_json):
+        d_price_info = dict()
+        d_price_info['price'] = float(response_json['lastPrice'])
+        d_price_info['volume'] = 0.0
+        d_price_info['timestamp'] = datetime.datetime.now()
+
+        return d_price_info
+
+
+# RIF BTC
+
+
 class BitfinexRIFBTC(PriceEngineBase):
     name = "bitfinex_rif_btc"
     description = "Bitfinex RIF"
@@ -297,6 +348,9 @@ base_engines_names = {
     "kraken": KrakenBTCUSD,
     "kucoin": KucoinBTCUSD,
     "binance": BinanceBTCUSD,
+    "gemini": GeminiBTCUSD,
+    "okcoin": OkCoinBTCUSD,
+    "itbit": ItBitBTCUSD,
     "bitfinex_rif": BitfinexRIFBTC,
     "bithumbpro_rif": BithumbproRIFBTC
 }

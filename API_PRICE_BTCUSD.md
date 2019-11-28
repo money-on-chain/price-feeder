@@ -762,35 +762,6 @@ Response:
 ```
 
 
-#### Bittrex
-
-
-Reference:
-
-```
-https://bittrex.github.io/api/v1-1
-```
-
-Curl:
-
-
-```
-curl https://api.bittrex.com/api/v1.1/public/getticker?market=USD-BTC
-```
-
-Response:
-
-```
-{
-   "success":true,
-   "message":"",
-   "result":{
-      "Bid":8218.12100000,
-      "Ask":8218.12200000,
-      "Last":8219.89900000
-   }
-}
-```
 
 
 #### Binance
@@ -878,6 +849,158 @@ Response
    }
 }
 ```
+
+
+
+#### Bittrex
+
+
+Reference:
+
+```
+https://bittrex.github.io/api/v1-1
+```
+
+Curl:
+
+
+```
+curl https://api.bittrex.com/api/v1.1/public/getticker?market=USD-BTC
+```
+
+Response:
+
+```
+{
+   "success":true,
+   "message":"",
+   "result":{
+      "Bid":8218.12100000,
+      "Ask":8218.12200000,
+      "Last":8219.89900000
+   }
+}
+```
+
+
+
+#### Gemini rest
+
+Documentation V2
+
+```
+https://docs.gemini.com/rest-api/#ticker-v2
+```
+
+Curl
+
+
+```
+curl https://api.gemini.com/v2/ticker/BTCUSD
+```
+
+Response
+
+```
+{
+"symbol":"BTCUSD",
+"open":"7624.11",
+"high":"7669.56",
+"low":"7425.17",
+"close":"7584.69",
+"changes":["7622.64","7605.68","7590.29","7614.34","7616.09","7464.95","7463.33","7445.12","7487.75","7488.29","7516.98","7514.1","7507.89","7514.86","7450.35","7485.72","7507.18","7530","7516.38","7570.94","7520.11","7538.55","7549.15","7567.24"],
+"bid":"7588.10",
+"ask":"7590.40"
+}
+```
+
+Documentation V1
+
+```
+https://docs.gemini.com/rest-api/#ticker
+```
+
+Curl
+
+
+```
+curl https://api.gemini.com/v1/pubticker/BTCUSD
+```
+
+Response
+
+```
+{
+"bid":"7599.98",
+"ask":"7601.87",
+"volume":{"BTC":"833.8342786986","USD":"6286349.4810340186","timestamp":1574972700000},
+"last":"7599.59"
+}
+```
+
+Note: Update price every 5 minutes
+
+
+
+
+#### OkCoin
+
+
+Reference:
+
+```
+https://www.okcoin.com/docs/en/#spot-some
+```
+
+Curl:
+
+
+```
+curl https://www.okcoin.com/api/spot/v3/instruments/BTC-USD/ticker
+```
+
+Response:
+
+```
+{"best_ask":"7595.94","best_bid":"7594.48","instrument_id":"BTC-USD","product_id":"BTC-USD","last":"7595.99","ask":"7595.94","bid":"7594.48","open_24h":"7593.89","high_24h":"7659.22","low_24h":"7425.95","base_volume_24h":"834.7","timestamp":"2019-11-28T20:46:54.656Z","quote_volume_24h":"6294262.62"}
+
+
+```
+
+
+
+#### ItBit
+
+
+Reference:
+
+```
+https://api.itbit.com/docs
+```
+
+Curl:
+
+
+```
+curl https://api.itbit.com/v1/markets/XBTUSD/ticker
+```
+
+Response:
+
+```
+
+{"pair":"XBTUSD",
+"bid":"7600.5",
+"bidAmt":"0.27993685",
+"ask":"7600.75","askAmt":"0.0054",
+"lastPrice":"7600.75000000",
+"lastAmt":"0.00480000","volume24h":"637.68978447",
+"volumeToday":"546.30777848","high24h":"7656.75000000","low24h":"7425.50000000","highToday":"7656.75000000","lowToday":"7425.50000000","openToday":"7534.00000000","vwapToday":"7536.05896650","vwap24h":"7536.44142872","serverTimeUTC":"2019-11-28T20:45:08.0566328Z"}
+}
+```
+
+
+
 
 
 References:
