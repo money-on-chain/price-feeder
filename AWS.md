@@ -74,8 +74,14 @@ Price Feeder are setup as services in AWS ECS. You can follow the screenshots be
 There are mandatory environmental variables that you need to take into consideration when creating the task definition
 
 1. PRICE_FEEDER_CONFIG: The configuration of the price feeder as a flattened json (config.json)
-1. PK_SECRET: The Private Key of the account that the price feeder uses. You need to set this as **"valueFrom"** and store the PK in AWS System Manager as an **encrypted parameter**
-1. PRICE_FEEDER_NAME: The name of the environment where you are deploying (test, moc-testnet, rrc20-testnet)
-1. AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY: these are needed for the heartbeat function of the price feeder, as it needs an account that has write access to a metric in Cloudwatch
+2. ACCOUNT_PK_SECRET: The Private Key of the account that the price
+   feeder uses. You need to set this as **"valueFrom"** and store the PK
+   in AWS System Manager as an **encrypted parameter**
+3. ACCOUNT_ADDRESS: The address of the account 
+4. PRICE_FEEDER_NAME: The name of the environment where you are deploying
+  (test, moc-testnet, rrc20-testnet)
+5. AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY: these are needed for the
+  heartbeat function of the price feeder, as it needs an account that
+  has write access to a metric in Cloudwatch
 
 ![Diagram](./img/env_variables.png)

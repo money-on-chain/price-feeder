@@ -57,24 +57,55 @@ PriceFeed is the address of the new contract price feeder
       }
 ```
 
-## Price Feeder app
+## Price Feeder
 
-**Requirement**
+**Requirement and installation**
  
-*  Python 3.6+
-
-**Usage**
+*  We need Python 3.6+
 
 Install libraries
 
 `pip install -r requirements.txt`
 
-then run
+**Usage Test**
+
+To test price ponderation:
 
 `python price_test.py`
 
+**Usage Job**
 
-## Analysis price ponderation
+Make sure to change **config.json** to point to your network and
+pricefeed.
+
+`python price_feeder.py`
+
+Alternatives:
+
+`python price_feeder.py --config=path_to_config.json --network=local`
+
+**--config:** Path to config.json 
+
+**--network=local:** Network name in the json
+
+
+**Usage Docker**
+
+Build
+
+```
+docker build -t price_feeder -f Dockerfile.standalone .
+```
+
+Run
+
+```
+docker run --rm --name price_feeder_1 price_feeder
+```
+
+
+
+## API tickers used
 
 (API PRICE BTCUSD)[API_PRICE_BTCUSD.md] 
 
