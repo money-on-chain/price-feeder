@@ -1,15 +1,20 @@
 {
   "app_mode": "rrc20",
   "block_expiration": 300,
-  "interval": 60,
+  "interval": 30,
   "timeout_web3": 60,
   "timeout_request": 10,
-  "price_variation_accepted": 0.0005,
-  "price_fetchers": ["bitstamp", "bitfinex", "kraken", "coinbase"],
-  "price_ponderations": [0.2138, 0.2782, 0.1605, 0.3475],
-  "price_rif_fetchers": ["bithumbpro", "bitfinex"],
-  "price_rif_ponderations": [0.5, 0.5],
-  "min_volume": 0.0,
+  "price_variation_write_blockchain": 0.0002,
+  "price_engines": [
+    {"name": "bitstamp", "ponderation": 0.2138, "min_volume":  0.0, "max_delay": 0},
+    {"name": "bitfinex", "ponderation": 0.2782, "min_volume":  0.0, "max_delay": 0},
+    {"name": "kraken", "ponderation": 0.1605, "min_volume":  0.0, "max_delay": 0},
+    {"name": "coinbase", "ponderation": 0.3475, "min_volume":  0.0, "max_delay": 0}
+  ],
+  "price_engines_rif": [
+    {"name": "bithumbpro_rif", "ponderation": 0.5, "min_volume":  0.0, "max_delay": 0},
+    {"name": "bitfinex_rif", "ponderation": 0.5, "min_volume":  0.0, "max_delay": 0}
+  ],
   "networks": {
     "local": {
       "uri": "http://10.0.0.73:4444",
