@@ -5,14 +5,16 @@ or RIF-USD
 
 Reference price (BTCUSD) for MoC system is provided via an oracle (the
 medianizer), which collates price data from a number of external price
-feeds. Take a look to (Oracle
-proyect)[https://github.com/money-on-chain]
+feeds. Take a look to
+[Oracle project](https://github.com/money-on-chain/Amphiraos-Oracle)
 
 ## Background
 
 **Price Feeds**
 
-Independent price feed operators constantly monitor the reference price across a number of external sources and will submit updates to the blockchain.
+Independent price feed operators constantly monitor the reference price
+across a number of external sources and will submit updates to the
+blockchain.
 
 Price updates are written to the blockchain via price feed contracts which are deployed and owned by feed operators. Price feed contracts which have been whitelisted by the medianizer are able to forward their prices for inclusion in the medianized price.
 
@@ -56,6 +58,15 @@ PriceFeed is the address of the new contract price feeder
         "MoCMedianizer": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA"
       }
 ```
+
+**Mainnet network:**
+
+
+|  Contract  |  Address |
+|:---|:---|
+|  PriceFeeders  | [0xf0abcc4cb0b46d9858704eb0c72d9735986b09cf](https://blockscout.com/rsk/mainnet/address/0xf0abcc4cb0b46d9858704eb0c72d9735986b09cf/contracts) |
+|  Medianizer  | [0x7b19bb8e6c5188ec483b784d6fb5d807a77b21bf](https://blockscout.com/rsk/mainnet/address/0x7b19bb8e6c5188ec483b784d6fb5d807a77b21bf/contracts) |
+
 
 ## Price Feeder
 
@@ -106,5 +117,4 @@ docker run --rm --name price_feeder_1 price_feeder
 
 ## Price Ponderation
 
-(Price ponderation and tickers
-)[https://github.com/money-on-chain/price-feeder/blob/master/PRICE_PONDERATION.md]
+[Price ponderation and tickers](https://github.com/money-on-chain/price-feeder/blob/master/PRICE_PONDERATION.md)
