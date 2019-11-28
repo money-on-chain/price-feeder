@@ -284,17 +284,17 @@ if __name__ == '__main__':
     w_median = pr_engine.get_weighted_median(w_prices)
 
     md_header = '''
-| Name        | Price        | Ponderation    | Price Ponderated  | Original Ponderation |
-| :--------:  | :----------- | ------------   | ----------------- |--------------------- |
-    '''
+| Name        | Price        | Ponderation    |   Original Ponderation    |             |
+| :--------:  | :----------- | ------------   | -------------------- |-------------------- |
+'''
     print(md_header)
 
     for w_price in w_prices:
-        print("| {name} |  {price} | {ponderation} | {ponderated} | {o_ponderation} |".format(
+        print("| {name} |  {price} | {ponderation} | {o_ponderation} |  |".format(
             name=w_price['name'],
             price=w_price['price'],
-            ponderation=format(w_price['price_ponderation'], '.3f'),
-            ponderated=format(w_price['price_ponderated'], '.3f'),
+            ponderation=format(w_price['price_ponderation'], '.4f'),
+            ponderated=format(w_price['price_ponderated'], '.4f'),
             o_ponderation=w_price['ponderation']))
     print("")
     print("**Weighted median:** {0}".format(w_median))
@@ -312,17 +312,17 @@ if __name__ == '__main__':
     w_median = pr_engine.get_weighted_median(w_prices)
 
     md_header = '''
-| Name        | Price        | Ponderation    | Price Ponderated  | Original Ponderation |
-| :--------:  | :----------- | ------------   | ----------------- |--------------------- |
-        '''
+| Name        | Price        | Ponderation    |   Original Ponderation    |             |
+| :--------:  | :----------- | ------------   | -------------------- |-------------------- |
+'''
     print(md_header)
 
     for w_price in w_prices:
-        print("| {name} |  {price} | {ponderation} | {ponderated} | {o_ponderation} |".format(
+        print("| {name} |  {price} | {ponderation} | {o_ponderation} |  |".format(
             name=w_price['name'],
             price=w_price['price'],
-            ponderation=format(w_price['price_ponderation'], '.3f'),
-            ponderated=format(w_price['price_ponderated'], '.3f'),
+            ponderation=format(w_price['price_ponderation'], '.4f'),
+            ponderated=format(w_price['price_ponderated'], '.4f'),
             o_ponderation=w_price['ponderation']))
     print("")
     print("**Weighted median:** {0}".format(w_median))
@@ -340,17 +340,17 @@ if __name__ == '__main__':
     w_median = pr_engine.get_weighted_median(w_prices)
 
     md_header = '''
-| Name        | Price        | Ponderation    | Price Ponderated  | Original Ponderation |
-| :--------:  | :----------- | ------------   | ----------------- |--------------------- |
-        '''
+| Name        | Price        | Ponderation    |   Original Ponderation    |             |
+| :--------:  | :----------- | ------------   | -------------------- |-------------------- |
+'''
     print(md_header)
 
     for w_price in w_prices:
-        print("| {name} |  {price} | {ponderation} | {ponderated} | {o_ponderation} |".format(
+        print("| {name} |  {price} | {ponderation} | {o_ponderation} |  |".format(
             name=w_price['name'],
             price=w_price['price'],
-            ponderation=format(w_price['price_ponderation'], '.3f'),
-            ponderated=format(w_price['price_ponderated'], '.3f'),
+            ponderation=format(w_price['price_ponderation'], '.4f'),
+            ponderated=format(w_price['price_ponderated'], '.4f'),
             o_ponderation=w_price['ponderation']))
     print("")
     print("**Weighted median:** {0}".format(w_median))
@@ -368,17 +368,17 @@ if __name__ == '__main__':
     w_median = pr_engine.get_weighted_median(w_prices)
 
     md_header = '''
-| Name        | Price        | Ponderation    | Price Ponderated  | Original Ponderation |
-| :--------:  | :----------- | ------------   | ----------------- |--------------------- |
+| Name        | Price        | Ponderation    |   Original Ponderation    |             |
+| :--------:  | :----------- | ------------   | -------------------- |-------------------- |
 '''
     print(md_header)
 
     for w_price in w_prices:
-        print("| {name} |  {price} | {ponderation} | {ponderated} | {o_ponderation} |".format(
+        print("| {name} |  {price} | {ponderation} | {o_ponderation} |  |".format(
             name=w_price['name'],
             price=w_price['price'],
-            ponderation=format(w_price['price_ponderation'], '.3f'),
-            ponderated=format(w_price['price_ponderated'], '.3f'),
+            ponderation=format(w_price['price_ponderation'], '.4f'),
+            ponderated=format(w_price['price_ponderated'], '.4f'),
             o_ponderation=w_price['ponderation']))
     print("")
     print("**Weighted median:** {0}".format(w_median))
