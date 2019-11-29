@@ -64,7 +64,7 @@ PriceFeed is the address of the new contract price feeder
 
 |  Contract  |  Address |
 |:---|:---|
-|  PriceFeeders  | [0xf0abcc4cb0b46d9858704eb0c72d9735986b09cf](https://blockscout.com/rsk/mainnet/address/0xf0abcc4cb0b46d9858704eb0c72d9735986b09cf/contracts) |
+|  PriceFeeders  | [List feeds](https://blockscout.com/rsk/mainnet/address/0xf0abcc4cb0b46d9858704eb0c72d9735986b09cf/logs) |
 |  Medianizer  | [0x7b19bb8e6c5188ec483b784d6fb5d807a77b21bf](https://blockscout.com/rsk/mainnet/address/0x7b19bb8e6c5188ec483b784d6fb5d807a77b21bf/contracts) |
 
 
@@ -115,6 +115,11 @@ docker run --rm --name price_feeder_1 price_feeder
 ```
 
 
-## Price Ponderation
+## Price Ponderation and tickers
 
 [Price ponderation and tickers](https://github.com/money-on-chain/price-feeder/blob/master/PRICE_PONDERATION.md)
+
+### Security and Audits
+
+[Deployed Contracts](https://github.com/money-on-chain/main-RBTC-contract/blob/master/Contracts%20verification.md)
+[Audits](https://github.com/money-on-chain/Audits)
