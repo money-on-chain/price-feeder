@@ -6,10 +6,13 @@
   "timeout_request": 10,
   "price_variation_write_blockchain": 0.0002,
   "price_engines": [
-    {"name": "bitstamp", "ponderation": 0.2138, "min_volume":  0.0, "max_delay": 0},
-    {"name": "bitfinex", "ponderation": 0.2782, "min_volume":  0.0, "max_delay": 0},
-    {"name": "kraken", "ponderation": 0.1605, "min_volume":  0.0, "max_delay": 0},
-    {"name": "coinbase", "ponderation": 0.3475, "min_volume":  0.0, "max_delay": 0}
+    {"name": "bitstamp", "ponderation": 0.1917841725, "min_volume":  0.0, "max_delay": 0},
+    {"name": "bitfinex", "ponderation": 0.1867488738, "min_volume":  0.0, "max_delay": 0},
+    {"name": "kraken", "ponderation": 0.1608109123, "min_volume":  0.0, "max_delay": 0},
+    {"name": "coinbase", "ponderation": 0.2349963137, "min_volume":  0.0, "max_delay": 0},
+    {"name": "gemini", "ponderation": 0.0880212588, "min_volume":  0.0, "max_delay": 0},
+    {"name": "okcoin", "ponderation": 0.06801454943, "min_volume":  0.0, "max_delay": 0},
+    {"name": "itbit", "ponderation": 0.06962391956, "min_volume":  0.0, "max_delay": 0}
   ],
   "price_engines_rif": [
     {"name": "bithumbpro_rif", "ponderation": 0.5, "min_volume":  0.0, "max_delay": 0},
