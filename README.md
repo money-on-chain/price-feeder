@@ -119,7 +119,7 @@ docker run --rm --name price_feeder_1 price_feeder
 
 [Price ponderation and tickers](https://github.com/money-on-chain/price-feeder/blob/master/PRICE_PONDERATION.md)
 
-### Security and Audits
+## Security and Audits
 
 [Deployed Contracts](https://github.com/money-on-chain/main-RBTC-contract/blob/master/Contracts%20verification.md)
 [Audits](https://github.com/money-on-chain/Audits)
