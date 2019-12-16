@@ -106,29 +106,19 @@ class ContractManager(NodeManager):
 
 class PriceFeederJob:
 
-    def __init__(self, path_to_config, network_nm, build_dir_nm):
+    def __init__(self, price_f_config, network_nm, build_dir_nm):
 
         self.tl = Timeloop()
         self.last_price = 0.0
 
-        config_options = self.options_from_config(path_to_config)
-        config_options['build_dir'] = build_dir_nm
-        self.options = config_options
+        self.options = price_f_config
+        self.options['build_dir'] = build_dir_nm
 
-        self.cm = ContractManager(config_options, network_nm)
+        self.cm = ContractManager(self.options, network_nm)
 
         self.price_source = PriceEngines(self.options['price_engines'], log=log)
         if self.options['app_mode'] == 'rrc20':
             self.price_source_rif = PriceEngines(self.options['price_engines_rif'], log=log)
-
-    @staticmethod
-    def options_from_config(filename='config.json'):
-        """ Options from file config.json """
-
-        with open(filename) as f:
-            config_options = json.load(f)
-
-        return config_options
 
     def get_price_btc(self):
 
@@ -194,6 +184,15 @@ class PriceFeederJob:
                 break
 
 
+def options_from_config(filename='config.json'):
+    """ Options from file config.json """
+
+    with open(filename) as f:
+        config_options = json.load(f)
+
+    return config_options
+
+
 if __name__ == '__main__':
 
     usage = '%prog [options] '
@@ -207,20 +206,28 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    if not options.config:
-        config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.json')
+    if 'PRICE_FEEDER_CONFIG' in os.environ:
+        config = json.loads(os.environ['PRICE_FEEDER_CONFIG'])
     else:
-        config_path = options.config
+        if not options.config:
+            config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.json')
+        else:
+            config_path = options.config
 
-    if not options.network:
-        network = 'local'
+        config = options_from_config(config_path)
+
+    if 'PRICE_FEEDER_NETWORK' in os.environ:
+        network = os.environ['PRICE_FEEDER_NETWORK']
     else:
-        network = options.network
+        if not options.network:
+            network = 'local'
+        else:
+            network = options.network
 
     if not options.build:
         build_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'build')
     else:
         build_dir = options.build
 
-    price_feeder = PriceFeederJob(config_path, network, build_dir)
+    price_feeder = PriceFeederJob(config, network, build_dir)
     price_feeder.time_loop_start()

@@ -105,21 +105,28 @@ Alternatives:
 Build
 
 ```
-docker build -t price_feeder -f Dockerfile.standalone .
+docker build -t price_feeder -f Dockerfile .
 ```
 
 Run
 
 ```
 docker run --rm --name price_feeder_1 price_feeder
+
+docker run  -d \
+    --name price_feeder_1 \    
+    --env ACCOUNT_ADDRESS=0x0e424e9a8598a55918e12de47172f3180c4b4e13 \
+    --env ACCOUNT_PK_SECRET=0x9e790b185e5b7f11f2924c7b809936866c38ed3ab3f33e0fbd3cfe791c2cdbd6 \
+    --env PRICE_FEEDER_NETWORK=local \
+    price_feeder
 ```
 
 
 ## Price Ponderation and tickers
 
-[Price ponderation and tickers](https://github.com/money-on-chain/price-feeder/blob/master/PRICE_PONDERATION.md)
+[Price ponderation and tickers](https://github.com/money-on-chain/price-feeder/blob/master/docs/PRICE_PONDERATION.md)
 
 ## Security and Audits
 
-[Deployed Contracts](https://github.com/money-on-chain/main-RBTC-contract/blob/master/Contracts%20verification.md)
+[Deployed Contracts](https://github.com/money-on-chain/main-RBTC-contract/blob/master/docs/Contracts%20verification.md)
 [Audits](https://github.com/money-on-chain/Audits)
