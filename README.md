@@ -49,7 +49,7 @@ control that account and have funds only to pay transaction gas.
 The new price feeder is owned by the user and also have the contract
 address. 
 
-Edit config.json with this information: MoCMedianizer is oracle address.
+Edit **config.json** with this information: MoCMedianizer is oracle address.
 PriceFeed is the address of the new contract price feeder
 
 ```
