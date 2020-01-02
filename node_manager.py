@@ -102,7 +102,7 @@ class NodeManager(object):
     @property
     def minimum_gas_price_fixed(self):
         """ Gas Price """
-        return 60000000
+        return self.options['gas_price']
 
     @property
     def block_number(self):
@@ -152,9 +152,13 @@ class NodeManager(object):
 
         nonce = self.web3.eth.getTransactionCount(from_address)
 
+        gas_price = self.options['gas_price']
+        if gas_price <= 0:
+            gas_price = self.minimum_gas_price
+
         transaction = dict(chainId=self.options['networks'][network]['network_id'],
                            nonce=nonce,
-                           gasPrice=self.minimum_gas_price_fixed,
+                           gasPrice=gas_price,
                            gas=100000,
                            to=to_address,
                            value=value)
@@ -181,9 +185,13 @@ class NodeManager(object):
 
         nonce = self.web3.eth.getTransactionCount(from_address)
 
+        gas_price = self.options['gas_price']
+        if gas_price <= 0:
+            gas_price = self.minimum_gas_price
+
         transaction_dict = dict(chainId=self.options['networks'][network]['network_id'],
                                 nonce=nonce,
-                                gasPrice=self.minimum_gas_price_fixed,
+                                gasPrice=gas_price,
                                 gas=gas_limit,
                                 value=value)
 
@@ -237,9 +245,13 @@ class NodeManager(object):
             if 'value' in tx_params:
                 tx_value = tx_params['value']
 
+        gas_price = self.options['gas_price']
+        if gas_price <= 0:
+            gas_price = self.minimum_gas_price
+
         transaction_dict = {'chainId': self.options['networks'][network]['network_id'],
                             'nonce': nonce,
-                            'gasPrice': self.minimum_gas_price_fixed,
+                            'gasPrice': gas_price,
                             'gas': gas_limit,
                             'value': tx_value}
 
@@ -293,9 +305,13 @@ class NodeManager(object):
             if 'value' in tx_params:
                 tx_value = tx_params['value']
 
+        gas_price = self.options['gas_price']
+        if gas_price <= 0:
+            gas_price = self.minimum_gas_price
+
         transaction_dict = {'chainId': self.options['networks'][network]['network_id'],
                             'nonce': nonce,
-                            'gasPrice': self.minimum_gas_price_fixed,
+                            'gasPrice': gas_price,
                             'gas': gas_limit,
                             'value': tx_value}
 
