@@ -453,8 +453,8 @@ class PriceEngines(object):
 
         missing_portions = 0.0
 
-        if len(f_prices) < 3:
-            raise Exception("At least we need 3 price sources.")
+        if len(f_prices) < 1:
+            raise Exception("At least we need 1 price sources.")
 
         if len(f_prices) != len(self.engines):
 
