@@ -301,3 +301,52 @@ curl https://api.bithumb.com/public/ticker/BTC
 curl https://api.bithumb.com/public/ticker/USDTRIF
 ```
 
+
+
+### KuCoin
+
+
+Unnoficial python SDK:
+
+https://github.com/sammchardy/python-kucoin
+
+
+REST_API_URL = 'https://openapi-v2.kucoin.com'
+SANDBOX_API_URL = 'https://openapi-sandbox.kucoin.com'
+    
+    
+
+
+curl https://openapi-sandbox.kucoin.com/api/v1/symbols
+
+curl https://openapi-v2.kucoin.com/api/v1/symbols
+
+```
+{"code":"200000","data":[{"symbol":"EOS-BTC","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.00000001","feeCurrency":"BTC","baseMaxSize":"10000000000","baseCurrency":"EOS","quoteCurrency":"BTC","market":"BTC","quoteIncrement":"0.00000001","baseMinSize":"0.01","quoteMinSize":"0.00001","name":"EOS-BTC","baseIncrement":"0.0001","isMarginEnabled":true},{"symbol":"EOS-USDT","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.0001","feeCurrency":"USDT","baseMaxSize":"10000000000","baseCurrency":"EOS","quoteCurrency":"USDT","market":"USDS","quoteIncrement":"0.000001","baseMinSize":"0.01","quoteMinSize":"0.01","name":"EOS-USDT","baseIncrement":"0.0001","isMarginEnabled":true},{"symbol":"EOS-ETH","quoteMaxSize":"99999999","enableTrading":false,"priceIncrement":"0.000001","feeCurrency":"ETH","baseMaxSize":"10000000000","baseCurrency":"EOS","quoteCurrency":"ETH","market":"ALTS","quoteIncrement":"0.0000001","baseMinSize":"0.01","quoteMinSize":"0.0001","name":"EOS-ETH","baseIncrement":"0.0001","isMarginEnabled":true},{"symbol":"LTC-USDT","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.001","feeCurrency":"USDT","baseMaxSize":"10000000000","baseCurrency":"LTC","quoteCurrency":"USDT","market":"USDS","quoteIncrement":"0.000001","baseMinSize":"0.001","quoteMinSize":"0.01","name":"LTC-USDT","baseIncrement":"0.000001","isMarginEnabled":true},{"symbol":"LTC-ETH","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.00001","feeCurrency":"ETH","baseMaxSize":"10000000000","baseCurrency":"LTC","quoteCurrency":"ETH","market":"ALTS","quoteIncrement":"0.0000001","baseMinSize":"0.001","quoteMinSize":"0.0001","name":"LTC-ETH","baseIncrement":"0.000001","isMarginEnabled":true},{"symbol":"LTC-BTC","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.000001","feeCurrency":"BTC","baseMaxSize":"10000000000","baseCurrency":"LTC","quoteCurrency":"BTC","market":"BTC","quoteIncrement":"0.00000001","baseMinSize":"0.001","quoteMinSize":"0.00001","name":"LTC-BTC","baseIncrement":"0.000001","isMarginEnabled":true},{"symbol":"KCS-USDT","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.00001","feeCurrency":"USDT","baseMaxSize":"10000000000","baseCurrency":"KCS","quoteCurrency":"USDT","market":"USDS","quoteIncrement":"0.000001","baseMinSize":"0.01","quoteMinSize":"0.05","name":"KCS-USDT","baseIncrement":"0.0001","isMarginEnabled":false},{"symbol":"KCS-ETH","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.0000001","feeCurrency":"ETH","baseMaxSize":"10000000000","baseCurrency":"KCS","quoteCurrency":"ETH","market":"ALTS","quoteIncrement":"0.0000001","baseMinSize":"0.01","quoteMinSize":"0.0001","name":"KCS-ETH","baseIncrement":"0.0001","isMarginEnabled":false},{"symbol":"KCS-BTC","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.00000001","feeCurrency":"BTC","baseMaxSize":"10000000000","baseCurrency":"KCS","quoteCurrency":"BTC","market":"BTC","quoteIncrement":"0.00000001","baseMinSize":"0.01","quoteMinSize":"0.00001","name":"KCS-BTC","baseIncrement":"0.0001","isMarginEnabled":false},{"symbol":"ETH-USDT","quoteMaxSize":"999999999","enableTrading":true,"priceIncrement":"0.01","feeCurrency":"USDT","baseMaxSize":"10000000000","baseCurrency":"ETH","quoteCurrency":"USDT","market":"USDS","quoteIncrement":"0.000001","baseMinSize":"0.0001","quoteMinSize":"0.01","name":"ETH-USDT","baseIncrement":"0.0000001","isMarginEnabled":true},{"symbol":"BTC-USDT","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.1","feeCurrency":"USDT","baseMaxSize":"10000000000","baseCurrency":"BTC","quoteCurrency":"USDT","market":"USDS","quoteIncrement":"0.000001","baseMinSize":"0.00001","quoteMinSize":"0.01","name":"BTC-USDT","baseIncrement":"0.00000001","isMarginEnabled":true},{"symbol":"ETH-BTC","quoteMaxSize":"999999999","enableTrading":true,"priceIncrement":"0.000001","feeCurrency":"BTC","baseMaxSize":"10000000000","baseCurrency":"ETH","quoteCurrency":"BTC","market":"BTC","quoteIncrement":"0.00000001","baseMinSize":"0.0001","quoteMinSize":"0.00001","name":"ETH-BTC","baseIncrement":"0.0000001","isMarginEnabled":true},{"symbol":"XRP-BTC","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.00000001","feeCurrency":"BTC","baseMaxSize":"10000000000","baseCurrency":"XRP","quoteCurrency":"BTC","market":"BTC","quoteIncrement":"0.00000001","baseMinSize":"0.1","quoteMinSize":"0.00001","name":"XRP-BTC","baseIncrement":"0.0001","isMarginEnabled":true},{"symbol":"XRP-USDT","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.00001","feeCurrency":"USDT","baseMaxSize":"10000000000","baseCurrency":"XRP","quoteCurrency":"USDT","market":"USDS","quoteIncrement":"0.000001","baseMinSize":"0.1","quoteMinSize":"0.01","name":"XRP-USDT","baseIncrement":"0.0001","isMarginEnabled":true},{"symbol":"XRP-ETH","quoteMaxSize":"99999999","enableTrading":true,"priceIncrement":"0.0000001","feeCurrency":"ETH","baseMaxSize":"10000000000","baseCurrency":"XRP","quoteCurrency":"ETH","market":"ALTS","quoteIncrement":"0.0000001","baseMinSize":"0.1","quoteMinSize":"0.0001","name":"XRP-ETH","baseIncrement":"0.0001","isMarginEnabled":true}]}
+```
+
+curl https://openapi-sandbox.kucoin.com/api/v1/currencies
+
+
+curl https://openapi-sandbox.kucoin.com/api/v1/market/orderbook/level1?symbol=RIF-BTC
+
+
+
+curl https://openapi-v2.kucoin.com/api/v1/market/orderbook/level1?symbol=RIF-BTC
+
+ curl https://openapi-v2.kucoin.com/api/v1/market/orderbook/level1?symbol=RIF-BTC
+
+{"code":"200000","data":{"sequence":"1579506733428","bestAsk":"0.00000949","size":"1658.1421","price":"0.00000939","bestBidSize":"2477.9093","time":1579527270002,"bestBid":"0.00000938","bestAskSize":"55.0685"}}
+
+ curl https://openapi-v2.kucoin.com/api/v1/market/orderbook/level1?symbol=RIF-USDT
+ 
+ 
+ curl http://api.coinbene.com/v1/market/ticker?symbol=RIFBTC
+ 
+ 
+ 
+ 
+ curl https://api-pub.bitfinex.com/v2/ticker/tRIFBTC
+ curl https://global-openapi.bithumb.pro/openapi/v1/spot/ticker?symbol=RIF-BTC
+ curl https://openapi-v2.kucoin.com/api/v1/market/orderbook/level1?symbol=RIF-BTC
+ curl http://api.coinbene.com/v1/market/ticker?symbol=RIFBTC
