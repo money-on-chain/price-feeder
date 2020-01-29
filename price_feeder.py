@@ -6,6 +6,7 @@ from timeloop import Timeloop
 from web3 import Web3
 import boto3
 import time
+import decimal
 
 # local imports
 from node_manager import NodeManager
@@ -37,24 +38,33 @@ class ContractManager(NodeManager):
 
     def __init__(self, config_options, network_nm):
         self.options = config_options
-        self.PriceFeed = None
         super().__init__(options=config_options, network=network_nm)
 
-    def connect_contract(self):
-        self.connect_node()
-        self.load_contracts()
+    def rif_get_source_price_btc(self):
 
-    def load_contracts(self):
+        self.connect_node()
 
         path_build = self.options['build_dir']
-        address_price_feed = self.options['networks'][network]['addresses']['PriceFeed']
+        address_moc_medianizer = Web3.toChecksumAddress(
+            self.options['networks'][network]['addresses']['RIF_source_price_btc'])
+        sc_moc_medianizer = self.load_json_contract(os.path.join(path_build, "MoCMedianizer.json"),
+                                                    deploy_address=address_moc_medianizer)
+        peek = sc_moc_medianizer.functions.peek().call()
+        if not peek[1]:
+            raise Exception("No source value price")
+        price = Web3.toInt(peek[0])
+        sc_price = Web3.fromWei(price, 'ether')
 
-        self.PriceFeed = self.load_json_contract(os.path.join(path_build, "PriceFeed.json"),
-                                                 deploy_address=address_price_feed)
+        return sc_price
 
     def post_price(self, p_price):
 
-        self.connect_contract()
+        self.connect_node()
+
+        path_build = self.options['build_dir']
+        address_price_feed = self.options['networks'][network]['addresses']['PriceFeed']
+        sc_price_feed = self.load_json_contract(os.path.join(path_build, "PriceFeed.json"),
+                                                deploy_address=address_price_feed)
 
         address_moc_medianizer = Web3.toChecksumAddress(self.options['networks'][network]['addresses']['MoCMedianizer'])
 
@@ -62,7 +72,7 @@ class ContractManager(NodeManager):
         last_block = self.get_block('latest')
         expiration = last_block.timestamp + delay
         try:
-            tx_hash = self.fnx_transaction(self.PriceFeed, 'post',
+            tx_hash = self.fnx_transaction(sc_price_feed, 'post',
                                            int(p_price),
                                            int(expiration),
                                            address_moc_medianizer)
@@ -116,18 +126,19 @@ class PriceFeederJob:
 
         self.cm = ContractManager(self.options, network_nm)
 
-        self.price_source = PriceEngines(self.options['price_engines'], log=log)
-        if self.options['app_mode'] == 'rrc20':
-            self.price_source_rif = PriceEngines(self.options['price_engines_rif'], log=log)
+        self.price_source = PriceEngines(self.options['price_engines'], log=log, app_mode=self.options['app_mode'])
 
     def get_price_btc(self):
 
-        return self.price_source.prices_weighted_median()
+        return decimal.Decimal(self.price_source.prices_weighted_median())
+
+    def rif_get_source_price_btc(self):
+        return self.cm.rif_get_source_price_btc()
 
     def get_price_rif(self):
 
-        btc_usd_price = self.price_source.prices_weighted_median()
-        btc_rif_price = self.price_source_rif.get_mean()
+        btc_usd_price = self.rif_get_source_price_btc()
+        btc_rif_price = decimal.Decimal(self.price_source.prices_weighted_median())
 
         usd_rif_price = btc_rif_price * btc_usd_price
 
@@ -135,14 +146,14 @@ class PriceFeederJob:
 
     def price_feed(self):
 
-        last_price = self.last_price
-        price_variation_accepted = self.options['price_variation_write_blockchain'] * last_price
+        last_price = decimal.Decimal(self.last_price)
+        price_variation_accepted = decimal.Decimal(self.options['price_variation_write_blockchain']) * last_price
         min_price = abs(last_price - price_variation_accepted)
         max_price = last_price + price_variation_accepted
 
         if self.options['app_mode'] == 'MoC':
             price_no_precision = self.get_price_btc()
-        elif self.options['app_mode'] == 'rrc20':
+        elif self.options['app_mode'] == 'RIF':
             price_no_precision = self.get_price_rif()
         else:
             raise Exception("Error! Config app_mode not recognize!")
