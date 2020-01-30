@@ -9,7 +9,7 @@ import time
 import decimal
 
 # local imports
-from node_manager import NodeManager
+from contracts_manager import NodeManager
 from price_engines import PriceEngines
 
 import logging
@@ -36,20 +36,38 @@ log = logging.getLogger('default')
 
 class ContractManager(NodeManager):
 
+    contract_moc_medianizer = None
+    contract_medianizer = None
+    contract_price_feed = None
+
     def __init__(self, config_options, network_nm):
         self.options = config_options
         super().__init__(options=config_options, network=network_nm)
+        self.connect_node()
+        self.load_contracts()
+
+    def load_contracts(self):
+
+        path_build = self.options['build_dir']
+
+        address_contract__medianizer = Web3.toChecksumAddress(
+            self.options['networks'][network]['addresses']['MoCMedianizer'])
+        self.contract_medianizer = self.load_json_contract(os.path.join(path_build, "MoCMedianizer.json"),
+                                                           deploy_address=address_contract__medianizer)
+
+        if self.options['app_mode'] == 'RIF':
+            address_contract_moc_medianizer = Web3.toChecksumAddress(
+                self.options['networks'][network]['addresses']['RIF_source_price_btc'])
+            self.contract_moc_medianizer = self.load_json_contract(os.path.join(path_build, "MoCMedianizer.json"),
+                                                                   deploy_address=address_contract_moc_medianizer)
+
+        address_contract_price_feed = self.options['networks'][network]['addresses']['PriceFeed']
+        self.contract_price_feed = self.load_json_contract(os.path.join(path_build, "PriceFeed.json"),
+                                                           deploy_address=address_contract_price_feed)
 
     def rif_get_source_price_btc(self):
 
-        self.connect_node()
-
-        path_build = self.options['build_dir']
-        address_moc_medianizer = Web3.toChecksumAddress(
-            self.options['networks'][network]['addresses']['RIF_source_price_btc'])
-        sc_moc_medianizer = self.load_json_contract(os.path.join(path_build, "MoCMedianizer.json"),
-                                                    deploy_address=address_moc_medianizer)
-        peek = sc_moc_medianizer.functions.peek().call()
+        peek = self.contract_moc_medianizer.functions.peek().call()
         if not peek[1]:
             raise Exception("No source value price")
         price = Web3.toInt(peek[0])
@@ -59,20 +77,14 @@ class ContractManager(NodeManager):
 
     def post_price(self, p_price):
 
-        self.connect_node()
-
-        path_build = self.options['build_dir']
-        address_price_feed = self.options['networks'][network]['addresses']['PriceFeed']
-        sc_price_feed = self.load_json_contract(os.path.join(path_build, "PriceFeed.json"),
-                                                deploy_address=address_price_feed)
-
-        address_moc_medianizer = Web3.toChecksumAddress(self.options['networks'][network]['addresses']['MoCMedianizer'])
+        address_moc_medianizer = Web3.toChecksumAddress(
+            self.options['networks'][network]['addresses']['MoCMedianizer'])
 
         delay = self.options['block_expiration']
         last_block = self.get_block('latest')
         expiration = last_block.timestamp + delay
         try:
-            tx_hash = self.fnx_transaction(sc_price_feed, 'post',
+            tx_hash = self.fnx_transaction(self.contract_price_feed, 'post',
                                            int(p_price),
                                            int(expiration),
                                            address_moc_medianizer)
