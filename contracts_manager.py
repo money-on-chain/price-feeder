@@ -1,6 +1,5 @@
 from web3 import Web3
 import json
-from optparse import OptionParser
 import pprint
 import os
 
@@ -51,6 +50,7 @@ class NodeManager(object):
     web3 = None
     network = 'local'
     default_account = 0  # index of the account
+    index_uri = 0
 
     def __init__(self, options=None, path_to_config='config.json', network='local'):
 
@@ -73,11 +73,43 @@ class NodeManager(object):
 
         return options
 
-    def connect_node(self):
+    def connect_node(self, index_uri=0):
         """Connect to the node"""
         network = self.network
-        self.web3 = Web3(Web3.HTTPProvider(self.options['networks'][network]['uri'],
+        uri = self.options['networks'][network]['uri']
+        if isinstance(uri, list):
+            current_uri = uri[index_uri]
+        elif isinstance(uri, str):
+            current_uri = uri
+        else:
+            raise Exception("Not valid uri")
+
+        self.index_uri = index_uri
+
+        self.web3 = Web3(Web3.HTTPProvider(current_uri,
                                            request_kwargs={'timeout': self.options['timeout_web3']}))
+
+    def reconnect_node(self):
+        """ Try again with another node if avalaible"""
+        network = self.network
+        uri = self.options['networks'][network]['uri']
+
+        next_index = self.index_uri + 1
+
+        if not isinstance(uri, list):
+            raise Exception
+
+        error = False
+        try:
+            current_uri = uri[next_index]
+        except IndexError:
+            error = True
+
+        if not error:
+            self.connect_node(index_uri=next_index)
+            return True
+        else:
+            return False
 
     def set_default_account(self, index):
         """ Default index account from config.json accounts """
@@ -181,7 +213,8 @@ class NodeManager(object):
         if 'ACCOUNT_ADDRESS' in os.environ:
             from_address = Web3.toChecksumAddress(os.environ['ACCOUNT_ADDRESS'])
         else:
-            from_address = Web3.toChecksumAddress(self.options['networks'][network]['accounts'][default_account]['address'])
+            from_address = Web3.toChecksumAddress(
+                self.options['networks'][network]['accounts'][default_account]['address'])
 
         nonce = self.web3.eth.getTransactionCount(from_address)
 
@@ -230,7 +263,8 @@ class NodeManager(object):
         if 'ACCOUNT_ADDRESS' in os.environ:
             from_address = Web3.toChecksumAddress(os.environ['ACCOUNT_ADDRESS'])
         else:
-            from_address = Web3.toChecksumAddress(self.options['networks'][network]['accounts'][default_account]['address'])
+            from_address = Web3.toChecksumAddress(
+                self.options['networks'][network]['accounts'][default_account]['address'])
 
         # pk from enviroment or from json
         if 'ACCOUNT_PK_SECRET' in os.environ:
@@ -396,4 +430,4 @@ class NodeManager(object):
 
 
 if __name__ == '__main__':
-    print("Init node manager")
+    print("Contract manager")
