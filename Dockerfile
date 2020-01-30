@@ -28,7 +28,7 @@ WORKDIR /home/www-data/app/price_feeder/
 COPY build ./build
 COPY price_feeder.py ./
 COPY price_engines.py ./
-COPY node_manager.py ./
+COPY contracts_manager.py ./
 COPY config.json ./
 ENV PATH "$PATH:/home/www-data/app/price_feeder/"
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/price_feeder/"
