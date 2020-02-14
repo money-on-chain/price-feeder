@@ -92,14 +92,13 @@ class ContractManager(NodeManager):
 
         except Exception as e:
             log.error(e, exc_info=True)
-            self.aws_put_metric_heart_beat(0)
+            self.aws_put_metric_exception(1)
         else:
             log.debug(tx_receipt)
             log.info("SUCCESS!. Price Set: [{0}]".format(p_price))
-            self.aws_put_metric_heart_beat(1)
 
     @staticmethod
-    def aws_put_metric_heart_beat(value):
+    def aws_put_metric_exception(value):
 
         if 'AWS_ACCESS_KEY_ID' not in os.environ:
             return
@@ -114,15 +113,15 @@ class ContractManager(NodeManager):
                     'MetricName': os.environ['PRICE_FEEDER_NAME'],
                     'Dimensions': [
                         {
-                            'Name': 'PriceFeeder',
-                            'Value': 'Status'
+                            'Name': 'PRICEFEEDER',
+                            'Value': 'Error'
                         },
                     ],
                     'Unit': 'None',
                     'Value': value
                 },
             ],
-            Namespace='MOC/PRICE_FEEDER'
+            Namespace='MOC/EXCEPTIONS'
         )
 
 
@@ -179,8 +178,7 @@ class PriceFeederJob:
             self.cm.post_price(price_to_set)
         else:
             log.info("WARNING! NOT SETTING is the same to last +- variation! [{0}]".format(price_no_precision))
-            self.cm.aws_put_metric_heart_beat(1)
-        
+
         self.last_price = price_no_precision
 
         return price_no_precision
@@ -191,8 +189,14 @@ class PriceFeederJob:
             self.price_feed()
         except Exception as e:
             log.error(e, exc_info=True)
+            self.cm.aws_put_metric_exception(1)
 
     def add_jobs(self):
+
+        # creating the alarm
+        self.cm.aws_put_metric_exception(0)
+
+        # adding the jobs
         self.tl._add_job(self.job_price_feed, datetime.timedelta(seconds=self.options['interval']))
 
     def time_loop_start(self):
