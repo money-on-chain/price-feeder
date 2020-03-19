@@ -338,7 +338,39 @@ class BithumbproRIFBTC(PriceEngineBase):
         return d_price_info
 
 
-base_engines_names = {
+class KucoinRIFBTC(PriceEngineBase):
+    name = "kucoin_rif_btc"
+    description = "Kucoin RIF"
+    uri = "https://openapi-v2.kucoin.com/api/v1/market/orderbook/level1?symbol=RIF-BTC"
+    convert = "RIF_BTC"
+
+    @staticmethod
+    def map(response_json):
+        d_price_info = dict()
+        d_price_info['price'] = float(response_json['data']['price'])
+        d_price_info['volume'] = float(response_json['data']['size'])
+        d_price_info['timestamp'] = datetime.datetime.now()
+
+        return d_price_info
+
+
+class CoinbeneRIFBTC(PriceEngineBase):
+    name = "coinbene_rif_btc"
+    description = "coinbene RIF"
+    uri = "http://api.coinbene.com/v1/market/ticker?symbol=RIFBTC"
+    convert = "RIF_BTC"
+
+    @staticmethod
+    def map(response_json):
+        d_price_info = dict()
+        d_price_info['price'] = float(response_json['ticker'][0]['last'])
+        d_price_info['volume'] = float(response_json['ticker'][0]['24hrVol'])
+        d_price_info['timestamp'] = datetime.datetime.now()
+
+        return d_price_info
+
+
+btc_usd_engines_names = {
     "coinbase": CoinBaseBTCUSD,
     "bitstamp": BitstampBTCUSD,
     "bitgo": BitGOBTCUSD,
@@ -350,9 +382,14 @@ base_engines_names = {
     "binance": BinanceBTCUSD,
     "gemini": GeminiBTCUSD,
     "okcoin": OkCoinBTCUSD,
-    "itbit": ItBitBTCUSD,
+    "itbit": ItBitBTCUSD
+}
+
+rif_btc_engines_names = {
     "bitfinex_rif": BitfinexRIFBTC,
-    "bithumbpro_rif": BithumbproRIFBTC
+    "bithumbpro_rif": BithumbproRIFBTC,
+    "kucoin_rif": KucoinRIFBTC,
+    "coinbene_rif": CoinbeneRIFBTC
 }
 
 
@@ -369,7 +406,7 @@ class LogMeta(object):
 
 class PriceEngines(object):
 
-    def __init__(self, price_options, log=None, engines_names=None):
+    def __init__(self, price_options, log=None, engines_names=None, app_mode='MoC'):
         self.price_options = price_options
         self.engines = list()
 
@@ -380,7 +417,12 @@ class PriceEngines(object):
 
         # engine names
         if not engines_names:
-            engines_names = base_engines_names
+            if app_mode == 'MoC':
+                engines_names = btc_usd_engines_names
+            elif app_mode == 'RIF':
+                engines_names = rif_btc_engines_names
+            else:
+                raise Exception("Not valid app mode")
 
         self.engines_names = engines_names
 
@@ -453,8 +495,8 @@ class PriceEngines(object):
 
         missing_portions = 0.0
 
-        if len(f_prices) < 3:
-            raise Exception("At least we need 3 price sources.")
+        if len(f_prices) < 1:
+            raise Exception("At least we need 1 price sources.")
 
         if len(f_prices) != len(self.engines):
 
@@ -497,3 +539,35 @@ class PriceEngines(object):
         w_median = self.get_weighted_median(w_prices)
         return w_median
 
+
+if __name__ == '__main__':
+
+    price_options_test = [
+        {"name": "bitfinex_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bithumbpro_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kucoin_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "coinbene_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
+    ]
+
+    pr_engine = PriceEngines(price_options_test, app_mode='RIF')
+    we_prices = pr_engine.get_weighted()
+    we_median = pr_engine.get_weighted_median(we_prices)
+
+    md_header = '''
+    | Name        | Price        | Ponderation    |   Original Ponderation    |             |
+    | :--------:  | :----------- | ------------   | -------------------- |-------------------- |
+    '''
+    print(md_header)
+
+    btc_price = 9050
+
+    for we_price in we_prices:
+        print("| {name} |  {price} | {ponderation} | {o_ponderation} |  |".format(
+            name=we_price['name'],
+            price=we_price['price'] * btc_price,
+            ponderation=format(we_price['price_ponderation'], '.4f'),
+            ponderated=format(we_price['price_ponderated'], '.4f'),
+            o_ponderation=we_price['ponderation']))
+    print("")
+    print("**Weighted median:** {0}".format(we_median * btc_price))
+    print("")

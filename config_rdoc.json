@@ -1,0 +1,35 @@
+{
+  "app_mode": "RIF",
+  "block_expiration": 300,
+  "interval": 30,
+  "timeout_web3": 60,
+  "timeout_request": 10,
+  "gas_price": 60000000,
+  "price_variation_write_blockchain": 0.001,
+  "price_engines": [
+    {"name": "bitfinex_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+    {"name": "bithumbpro_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+    {"name": "kucoin_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+    {"name": "coinbene_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
+  ],
+  "networks": {
+    "local": {
+      "uri": "https://public-node.testnet.rsk.co",
+      "network_id": 31,
+      "accounts": [
+        {
+          "address": "0xC67D9eE30d2119A384E02de568BE80FE785074Ba",
+          "private_key":  ""
+        }
+      ],
+      "addresses": {
+        "PriceFeed": "0x462D7082F3671a3BE160638Be3f8C23Ca354F48A",
+        "MoCMedianizer": "0x9d4b2c05818A0086e641437fcb64ab6098c7BbEc",
+        "RIF_source_price_btc": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4"
+      }
+
+    }
+
+  }
+
+}

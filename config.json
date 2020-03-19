@@ -4,6 +4,7 @@
   "interval": 30,
   "timeout_web3": 60,
   "timeout_request": 10,
+  "gas_price": 60000000,
   "price_variation_write_blockchain": 0.0005,
   "price_engines": [
     {"name": "bitstamp", "ponderation": 0.1917841725, "min_volume":  0.0, "max_delay": 0},
@@ -13,10 +14,6 @@
     {"name": "gemini", "ponderation": 0.0880212588, "min_volume":  0.0, "max_delay": 0},
     {"name": "okcoin", "ponderation": 0.06801454943, "min_volume":  0.0, "max_delay": 0},
     {"name": "itbit", "ponderation": 0.06962391956, "min_volume":  0.0, "max_delay": 0}
-  ],
-  "price_engines_rif": [
-    {"name": "bithumbpro_rif", "ponderation": 0.5, "min_volume":  0.0, "max_delay": 0},
-    {"name": "bitfinex_rif", "ponderation": 0.5, "min_volume":  0.0, "max_delay": 0}
   ],
   "networks": {
     "local": {
@@ -30,7 +27,8 @@
       ],
       "addresses": {
         "PriceFeed": "0x3442F63Ed9FeF9b9c224Ef58519c588804918bA2",
-        "MoCMedianizer": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA"
+        "MoCMedianizer": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA",
+        "RIF_source_price_btc": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA"
       }
 
     },
@@ -45,7 +43,8 @@
       ],
       "addresses": {
         "PriceFeed": "0x3442F63Ed9FeF9b9c224Ef58519c588804918bA2",
-        "MoCMedianizer": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA"
+        "MoCMedianizer": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA",
+        "RIF_source_price_btc": "0x111301D0B6Ea6d588ba50b0eB8be7c02B6271AEA"
       }
 
     }
