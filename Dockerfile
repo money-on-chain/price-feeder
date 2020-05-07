@@ -5,8 +5,7 @@ LABEL maintainer='martin.mulone@moneyonchain.com'
 
 RUN apt-get update && \
     apt-get install -y \
-        locales \
-        supervisor
+        locales
 
 RUN echo $TZ > /etc/timezone && \
     apt-get update && apt-get install -y tzdata && \
@@ -19,17 +18,12 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir /home/www-data && mkdir /home/www-data/app \
-    && mkdir /home/www-data/app/price_feeder \
-    && mkdir /home/www-data/app/price_feeder/logs
-
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+    && mkdir /home/www-data/app/price_feeder
 
 WORKDIR /home/www-data/app/price_feeder/
-COPY build ./build
 COPY price_feeder.py ./
 COPY price_engines.py ./
-COPY contracts_manager.py ./
 COPY config.json ./
 ENV PATH "$PATH:/home/www-data/app/price_feeder/"
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/price_feeder/"
-CMD ["/usr/bin/supervisord"]
+CMD ["python", "./price_feeder.py"]
