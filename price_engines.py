@@ -1,3 +1,19 @@
+"""
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 3, 29 June 2007
+
+ Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+
+                            Preamble
+
+  The GNU General Public License is a free, copyleft license for
+    software and other kinds of works.
+
+  Martin Mulone @2020 Moneyonchain
+"""
+
 import requests
 import datetime
 from statistics import median, mean
@@ -102,7 +118,8 @@ class PriceEngineBase(object):
             response_json = r.json()
             d_price_info = self.map(response_json)
         except Exception as err:
-            err_msg = "Error. Error response from server on get price. Engine: {0}. {1}".format(self.name, err)
+            #err_msg = "Error. Error response from server on get price. Engine: {0}. {1}".format(self.name, err)
+            err_msg = "Error. Error response from server on get price. Engine: {0}. ".format(self.name)
             self.send_alarm(err_msg)
             return None, err_msg
 

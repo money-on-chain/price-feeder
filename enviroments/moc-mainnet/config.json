@@ -1,0 +1,36 @@
+{
+  "interval": 30,
+  "timeout": 60,
+  "timeout_request": 10,
+  "gas_price": 60000000,
+  "networks": {
+    "mocMainnet2": {
+      "app_mode": "MoC",
+      "uri": ["https://public-node.rsk.co"],
+      "chain_id": 30,
+      "accounts": [
+        {
+          "address": "0xEA14c08764c9e5F212c916E11a5c47Eaf92571e4",
+          "private_key": ""
+        }
+      ],
+      "block_expiration": 300,
+      "price_variation_write_blockchain": 0.0005,
+      "price_engines": [
+        {"name": "bitstamp", "ponderation": 0.1917841725, "min_volume":  0.0, "max_delay": 0},
+        {"name": "bitfinex", "ponderation": 0.1867488738, "min_volume":  0.0, "max_delay": 0},
+        {"name": "kraken", "ponderation": 0.1608109123, "min_volume":  0.0, "max_delay": 0},
+        {"name": "coinbase", "ponderation": 0.2349963137, "min_volume":  0.0, "max_delay": 0},
+        {"name": "gemini", "ponderation": 0.0880212588, "min_volume":  0.0, "max_delay": 0},
+        {"name": "okcoin", "ponderation": 0.06801454943, "min_volume":  0.0, "max_delay": 0},
+        {"name": "itbit", "ponderation": 0.06962391956, "min_volume":  0.0, "max_delay": 0}
+      ],
+      "addresses": {
+        "MoCMedianizer": "0x7B19bb8e6c5188eC483b784d6fB5d807a77b21bF",
+        "PriceFeed": "0xfE05Ee3d651670F807Db7dD56e1E0FCBa29B234a",
+        "RIF_source_price_btc": ""
+      }
+    }
+  }
+
+}

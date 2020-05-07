@@ -3,3 +3,4 @@ timeloop
 boto3
 numpy
 requests
+moneyonchain>=0.0.18
