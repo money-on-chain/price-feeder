@@ -119,13 +119,11 @@ To test price ponderation:
 **Usage Job**
 
 Make sure to change **config.json** to point to your network and
-pricefeed.
+pricefeed. Edit config.json, there are many networks already preconfigurated, edit the network you want to run
+and run the above command passing the network you are going to use:
 
-`python price_feeder.py`
 
-Alternatives:
-
-`python price_feeder.py --config=path_to_config.json --network=local`
+`python price_feeder.py --network=mocTestnet`
 
 **--config:** Path to config.json 
 
@@ -145,7 +143,6 @@ Run
 ```
 docker run -d \
 --name price_feeder_1 \
---env ACCOUNT_ADDRESS=0x0e424e9a8598a55918e12de47172f3180c4b4e13 \
 --env ACCOUNT_PK_SECRET=0x9e790b185e5b7f11f2924c7b809936866c38ed3ab3f33e0fbd3cfe791c2cdbd6 \
 --env PRICE_FEEDER_NETWORK=local \
 price_feeder
@@ -183,10 +180,10 @@ cd price-feeder
 git checkout master 
 ```
 
-4. Set the base config por our deployment in our case config_rdoc.json is our base
+4. Set the base template config por our deployment
 
 ```
-cp config_rdoc.json config.json
+cp enviroments/rdoc-testnet-rsk/config.json config.json
 ```
 
 5. Edit config.json and change to ensure this:
@@ -219,7 +216,6 @@ Replace **(PRIVATE KEY)** with private key
 ```
 docker run -d \
 --name price_feeder_1 \
---env ACCOUNT_ADDRESS=0xbc6d77a5adfa6fb09c3d2cb8b4765d5729e7b8ba \
 --env ACCOUNT_PK_SECRET=(PRIVATE KEY) \
 --env PRICE_FEEDER_NETWORK=local \
 price_feeder
