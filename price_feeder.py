@@ -49,7 +49,7 @@ class PriceFeederJob:
         self.options = price_f_config
         self.network = network_nm
         self.connection_manager = ConnectionManager(options=self.options, network=self.network)
-        self.app_mode = self.options['networks'][network]['app_mode']
+        self.app_mode = self.options['networks'][self.network]['app_mode']
 
         if self.app_mode == 'RIF':
             self.contract_medianizer = RDOCMoCMedianizer(self.connection_manager)
@@ -67,6 +67,7 @@ class PriceFeederJob:
 
         self.tl = Timeloop()
         self.last_price = 0.0
+        self.last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=300)
 
         self.price_source = PriceEngines(self.options['networks'][self.network]['price_engines'],
                                          log=log,
@@ -114,12 +115,28 @@ class PriceFeederJob:
 
     def price_feed(self):
 
-        last_price = decimal.Decimal(self.last_price)
-        price_variation_accepted = decimal.Decimal(
-            self.options['networks'][self.network]['price_variation_write_blockchain']) * last_price
-        min_price = abs(last_price - price_variation_accepted)
-        max_price = last_price + price_variation_accepted
+        # now
+        now = datetime.datetime.now()
 
+        # price variation accepted
+        price_variation = self.options['networks'][self.network]['price_variation_write_blockchain']
+
+        # max time in seconds that price is valid
+        block_expiration = self.options['networks'][self.network]['block_expiration']
+
+        # get the last price we insert as a feeder
+        last_price = decimal.Decimal(self.last_price)
+
+        # get the price from oracle
+        last_price_oracle = self.contract_medianizer.peek()[0]
+
+        # calculate the price variation from the last price from oracle
+        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
+
+        min_price = abs(last_price_oracle - price_variation_accepted)
+        max_price = last_price_oracle + price_variation_accepted
+
+        # get the price source depending on the project
         if self.options['networks'][self.network]['app_mode'] == 'MoC':
             price_no_precision = self.get_price_btc()
         elif self.options['networks'][self.network]['app_mode'] == 'RIF':
@@ -127,19 +144,36 @@ class PriceFeederJob:
         else:
             raise Exception("Error! Config app_mode not recognize!")
 
-        price_to_set = price_no_precision * 10 ** 18
-        log.debug("Last price: [{0}] Min: [{1}] Max: [{2}] New price: [{3}]".format(
-            last_price,
+        # is outside the range so we need to write to blockchain
+        is_in_range = price_no_precision < min_price or price_no_precision > max_price
+
+        # is more than 5 minutes from the last write
+        is_in_time = (self.last_price_timestamp + datetime.timedelta(seconds=300) < now)
+
+        log.info("[PRICE FEED] ORACLE: [{0:.4f}] MIN: [{1:.4f}] MAX: [{2:.4f}] NEW: [{3:.4f}] IS IN RANGE: [{4}] IS IN TIME: [{5}]".format(
+            last_price_oracle,
             min_price,
             max_price,
-            price_no_precision))
-        if price_no_precision < min_price or price_no_precision > max_price:
-            self.contract_price_feed.post(price_to_set)
-        else:
-            log.info("NOT SETTING is the same to last +- variation! [{0}]".format(
-                price_no_precision))
+            price_no_precision,
+            is_in_range,
+            is_in_time))
 
-        self.last_price = price_no_precision
+        # IF is in range or not in range but is in time
+        if is_in_range or (not is_in_range and is_in_time):
+
+            # set the precision to price
+            price_to_set = price_no_precision * 10 ** 18
+
+            # submit the value to contract
+            self.contract_price_feed.post(price_to_set,
+                                          block_expiration=block_expiration,
+                                          gas_limit=2000000)
+
+            # save the last price to compare
+            self.last_price = price_no_precision
+
+            # save the last timestamp to compare
+            self.last_price_timestamp = datetime.datetime.now()
 
         return price_no_precision
 
@@ -206,7 +240,7 @@ if __name__ == '__main__':
         network = os.environ['PRICE_FEEDER_NETWORK']
     else:
         if not options.network:
-            network = 'rdocTestnet'
+            network = 'mocTestnet'
         else:
             network = options.network
 
