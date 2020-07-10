@@ -240,7 +240,7 @@ if __name__ == '__main__':
         network = os.environ['PRICE_FEEDER_NETWORK']
     else:
         if not options.network:
-            network = 'mocTestnet'
+            network = 'rdocTestnet'
         else:
             network = options.network
 
