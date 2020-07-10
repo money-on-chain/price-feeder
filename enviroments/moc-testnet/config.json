@@ -14,7 +14,7 @@
           "private_key": ""
         }
       ],
-      "block_expiration": 300,
+      "block_expiration": 600,
       "price_variation_write_blockchain": 0.0002,
       "price_engines": [
         {"name": "bitstamp", "ponderation": 0.1917841725, "min_volume":  0.0, "max_delay": 0},
