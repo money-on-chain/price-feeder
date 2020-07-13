@@ -185,7 +185,6 @@ class PriceFeederJob:
 
         if not self.contract_medianizer.compute()[1] or self.backup_writes > 0:
             self.price_feed()
-            log.error("[BACKUP MODE ACTIVATED!]")
             self.aws_put_metric_exception(1)
 
             if self.backup_writes <= 0:
@@ -195,6 +194,9 @@ class PriceFeederJob:
                     self.backup_writes = 100
 
             self.backup_writes -= 1
+
+            log.error("[BACKUP MODE ACTIVATED!] WRITE REMAINING:{0}".format(self.backup_writes))
+
         else:
             log.info("[NO BACKUP]")
 
