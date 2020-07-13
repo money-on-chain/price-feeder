@@ -177,10 +177,28 @@ class PriceFeederJob:
 
         return price_no_precision
 
+    def price_feed_backup(self):
+        """ Only start to work only when we dont have price """
+
+        if not self.contract_medianizer.compute()[1]:
+            self.price_feed()
+            log.error("[BACKUP MODE ACTIVATED!]")
+            self.aws_put_metric_exception(1)
+        else:
+            log.info("[NO BACKUP]")
+
     def job_price_feed(self):
 
         try:
             self.price_feed()
+        except Exception as e:
+            log.error(e, exc_info=True)
+            self.aws_put_metric_exception(1)
+
+    def job_price_feed_backup(self):
+
+        try:
+            self.price_feed_backup()
         except Exception as e:
             log.error(e, exc_info=True)
             self.aws_put_metric_exception(1)
@@ -190,9 +208,18 @@ class PriceFeederJob:
         # creating the alarm
         self.aws_put_metric_exception(0)
 
-        # adding the jobs
-        self.tl._add_job(self.job_price_feed, datetime.timedelta(
-            seconds=self.options['interval']))
+        backup_mode = False
+        if 'backup_mode' in self.options:
+            if self.options['backup_mode']:
+                backup_mode = True
+
+        if backup_mode:
+            log.info("Job Price feeder as BACKUP!")
+            self.tl._add_job(self.job_price_feed_backup, datetime.timedelta(
+                seconds=self.options['interval']))
+        else:
+            self.tl._add_job(self.job_price_feed, datetime.timedelta(
+                seconds=self.options['interval']))
 
     def time_loop_start(self):
 
