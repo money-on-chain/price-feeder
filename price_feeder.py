@@ -185,7 +185,7 @@ class PriceFeederJob:
             log.error("[BACKUP MODE ACTIVATED!]")
             self.aws_put_metric_exception(1)
         else:
-            log.info("[PRICE FEEDER BACKUP MODE] PRICE VALID NO BACKUP")
+            log.info("[NO BACKUP]")
 
     def job_price_feed(self):
 
