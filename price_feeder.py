@@ -51,6 +51,9 @@ class PriceFeederJob:
         self.connection_manager = ConnectionManager(options=self.options, network=self.network)
         self.app_mode = self.options['networks'][self.network]['app_mode']
 
+        # backup writes
+        self.backup_writes = 0
+
         if self.app_mode == 'RIF':
             self.contract_medianizer = RDOCMoCMedianizer(self.connection_manager)
             self.contract_price_feed = RDOCPriceFeed(self.connection_manager)
@@ -180,10 +183,18 @@ class PriceFeederJob:
     def price_feed_backup(self):
         """ Only start to work only when we dont have price """
 
-        if not self.contract_medianizer.compute()[1]:
+        if not self.contract_medianizer.compute()[1] or self.backup_writes > 0:
             self.price_feed()
             log.error("[BACKUP MODE ACTIVATED!]")
             self.aws_put_metric_exception(1)
+
+            if self.backup_writes <= 0:
+                if 'backup_writes' in self.options:
+                    self.backup_writes = self.options['backup_writes']
+                else:
+                    self.backup_writes = 100
+
+            self.backup_writes -= 1
         else:
             log.info("[NO BACKUP]")
 
