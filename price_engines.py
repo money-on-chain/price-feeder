@@ -18,7 +18,7 @@ import requests
 import datetime
 from statistics import median, mean
 import numpy as np
-from pprint import pformat
+from tabulate import tabulate
 
 
 def weighted_median(values, weights):
@@ -533,8 +533,6 @@ class PriceEngines(object):
             pr["price_ponderation"] = portion
             pr["price_ponderated"] = pr["price"] * portion
 
-        #self.log.info(pformat(f_prices))
-
         return f_prices
 
     @staticmethod
@@ -566,25 +564,24 @@ if __name__ == '__main__':
         {"name": "coinbene_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
     ]
 
+    btc_price = 9050
+
     pr_engine = PriceEngines(price_options_test, app_mode='RIF')
     we_prices = pr_engine.get_weighted()
     we_median = pr_engine.get_weighted_median(we_prices)
 
-    md_header = '''
-    | Name        | Price        | Ponderation    |   Original Ponderation    |             |
-    | :--------:  | :----------- | ------------   | -------------------- |-------------------- |
-    '''
-    print(md_header)
-
-    btc_price = 9050
-
+    titles = ['Name', 'Price', 'Ponderation', 'Original Ponderation']
+    display_table = []
     for we_price in we_prices:
-        print("| {name} |  {price} | {ponderation} | {o_ponderation} |  |".format(
-            name=we_price['name'],
-            price=we_price['price'] * btc_price,
-            ponderation=format(we_price['price_ponderation'], '.4f'),
-            ponderated=format(we_price['price_ponderated'], '.4f'),
-            o_ponderation=we_price['ponderation']))
+        row = []
+        row.append(we_price['name'])
+        row.append(we_price['price'] * btc_price)
+        row.append(we_price['price_ponderation'])
+        row.append(we_price['ponderation'])
+        display_table.append(row)
+
     print("")
-    print("**Weighted median:** {0}".format(we_median * btc_price))
+    print(tabulate(display_table, headers=titles))
+    print("")
+    print("Weighted median: {0}".format(we_median * btc_price))
     print("")

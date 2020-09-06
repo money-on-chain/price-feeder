@@ -4,3 +4,4 @@ boto3
 numpy
 requests
 moneyonchain>=0.0.23
+tabulate
