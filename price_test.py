@@ -1,7 +1,8 @@
 import datetime
 
 # local imports
-from price_engines import PriceEngines, PriceEngineBase
+from price_engines import PriceEngines
+from engines.base import Base as PriceEngineBase
 
 
 class PriceEngineTest1(PriceEngineBase):
