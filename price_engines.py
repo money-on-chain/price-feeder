@@ -14,11 +14,11 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-import requests
-import engines
-from statistics import median, mean
+import requests, engines, click
 import numpy as np
+from statistics import median, mean
 from tabulate import tabulate
+
 
 
 def weighted_median(values, weights):
@@ -204,6 +204,38 @@ class PriceEngines(object):
 
 if __name__ == '__main__':
 
+    print()
+    print('Test of all engines')
+    print('==== == === =======')
+    print()
+
+    session = requests.Session()
+
+    display_table = []
+    titles = ['Pair', 'Exchange', 'Price', 'Volume', 'Timestamp']
+
+    for pair, d_engines in engines.pairs.items():
+        with click.progressbar(d_engines.items(), label=pair) as bar:
+            for name, Engine in bar:
+                engine = Engine(LogMeta())
+                d_price, foo = engine.get_price(session)
+                d_row = d_price if d_price else  {'price': 'Error', 'volume': 'Error', 'timestamp': 'Error'}
+                for key in ['convert', 'description']:
+                    d_row[key] = getattr(engine, key)
+                l_row = []
+                for key in ['convert', 'description', 'price', 'volume', 'timestamp']:
+                    l_row.append(d_row[key])
+                display_table.append(l_row)
+
+    print()
+    print(tabulate(display_table, headers=titles))
+    print()
+
+    print()
+    print('Weighted Median Test')
+    print('======== ====== ====')
+    print()
+
     price_options_test = [
         {"name": "bitfinex_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
         {"name": "bithumbpro_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
@@ -232,5 +264,3 @@ if __name__ == '__main__':
     print("")
     print("Weighted median: {0}".format(we_median * btc_price))
     print("")
-
-
