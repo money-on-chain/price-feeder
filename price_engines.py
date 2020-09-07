@@ -106,10 +106,11 @@ class PriceEngines(object):
 
             d_engine = dict()
             d_engine["engine"] = i_engine
-            d_engine["ponderation"] = price_engine["ponderation"]
-            d_engine["min_volume"] = price_engine["min_volume"]
-            d_engine["max_delay"] = price_engine["max_delay"]
-            d_engine["name"] = engine_name
+            d_engine["name"]   = engine_name
+
+            for key in ["ponderation", "min_volume", "max_delay"]:
+                d_engine[key] = price_engine[key]
+
             self.engines.append(d_engine)
 
     def fetch_prices(self, session=None):
@@ -122,14 +123,14 @@ class PriceEngines(object):
         for engine in self.engines:
             d_price, err_msg = engine["engine"].get_price(session)
             if d_price:
+
                 i_price = dict()
-                i_price['name'] = engine["name"]
-                i_price['ponderation'] = engine["ponderation"]
-                i_price['price'] = d_price["price"]
-                i_price['volume'] = d_price["volume"]
-                i_price['timestamp'] = d_price["timestamp"]
-                i_price['min_volume'] = engine["min_volume"]
-                i_price['max_delay'] = engine["max_delay"]
+
+                for key in ["name", "ponderation", "min_volume", "max_delay"]:
+                    i_price[key] = engine[key]
+
+                for key in ["price", "volume", "timestamp"]:
+                    i_price[key] = d_price[key]
 
                 if i_price["min_volume"] > 0:
                     # the evalution of volume is on
@@ -264,3 +265,4 @@ if __name__ == '__main__':
     print("")
     print("Weighted median: {0}".format(we_median * btc_price))
     print("")
+    
