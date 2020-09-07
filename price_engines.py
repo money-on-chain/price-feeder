@@ -181,6 +181,11 @@ class PriceEngines(object):
             pr["price_ponderation"] = portion
             pr["price_ponderated"] = pr["price"] * portion
 
+        # Should the sum of the weight not exceed 1?
+        total = sum([ pr["price_ponderation"] for pr in f_prices])
+        for pr in f_prices:
+            pr["price_ponderation"] = pr["price_ponderation"] / total
+
         return f_prices
 
     @staticmethod
@@ -265,4 +270,30 @@ if __name__ == '__main__':
     print("")
     print("Weighted median: {0}".format(we_median * btc_price))
     print("")
-    
+
+    price_options_test = [
+        {"name": "binance", "ponderation": 1.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitstamp", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "coinbase", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex", "ponderation": 0, "min_volume": 0.0, "max_delay": 0}
+    ]
+
+    pr_engine = PriceEngines(price_options_test, app_mode='MoC')
+    we_prices = pr_engine.get_weighted()
+    we_median = pr_engine.get_weighted_median(we_prices)
+
+    titles = ['Name', 'Price', 'Ponderation', 'Original Ponderation']
+    display_table = []
+    for we_price in we_prices:
+        row = []
+        row.append(we_price['name'])
+        row.append(we_price['price'])
+        row.append(we_price['price_ponderation'])
+        row.append(we_price['ponderation'])
+        display_table.append(row)
+
+    print("")
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
+    print("")
+    print("Weighted median: {0}".format(we_median ))
+    print("")
