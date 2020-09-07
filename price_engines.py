@@ -228,7 +228,7 @@ if __name__ == '__main__':
                 display_table.append(l_row)
 
     print()
-    print(tabulate(display_table, headers=titles))
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
     print()
 
     print()
@@ -260,7 +260,7 @@ if __name__ == '__main__':
         display_table.append(row)
 
     print("")
-    print(tabulate(display_table, headers=titles))
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
     print("")
     print("Weighted median: {0}".format(we_median * btc_price))
     print("")
