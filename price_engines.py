@@ -191,11 +191,6 @@ class PriceEngines(object):
 
 if __name__ == '__main__':
 
-    print()
-    print('Test of all engines')
-    print('==== == === =======')
-    print()
-
     session = requests.Session()
 
     display_table = []
@@ -214,6 +209,10 @@ if __name__ == '__main__':
                     l_row.append(d_row[key])
                 display_table.append(l_row)
 
+
+    print()
+    print('Test of all engines')
+    print('==== == === =======')
     print()
     print(tabulate(display_table, headers=titles, tablefmt="pipe"))
     print()
@@ -249,7 +248,7 @@ if __name__ == '__main__':
     print("")
     print(tabulate(display_table, headers=titles, tablefmt="pipe"))
     print("")
-    print("Weighted median: {0}".format(we_median * btc_price))
+    print("**Weighted median:** {0}".format(we_median * btc_price))
     print("")
 
     price_options_test = [
@@ -276,5 +275,5 @@ if __name__ == '__main__':
     print("")
     print(tabulate(display_table, headers=titles, tablefmt="pipe"))
     print("")
-    print("Weighted median: {0}".format(we_median ))
+    print("**Weighted median:** {0}".format(we_median ))
     print("")
