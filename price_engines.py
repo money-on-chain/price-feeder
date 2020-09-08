@@ -158,33 +158,14 @@ class PriceEngines(object):
 
         f_prices = self.fetch_prices(session=session)
 
-        missing_portions = 0.0
-
         if len(f_prices) < 1:
             raise Exception("At least we need 1 price sources.")
 
-        if len(f_prices) != len(self.engines):
-
-            l_fetched = list()
-            for pr in f_prices:
-                l_fetched.append(pr['name'])
-
-            # we have to recalculate the ponderation, some price is missing
-            for d_engine in self.engines:
-                if d_engine["name"] not in l_fetched:
-                    missing_portions += d_engine["ponderation"]
-
-        eq_missing_portions = missing_portions / len(f_prices)
-
+        # The sum of the weight must not exceed 1
+        total = sum([ pr["ponderation"] for pr in f_prices])
         for pr in f_prices:
-            portion = pr["ponderation"] + eq_missing_portions
-            pr["price_ponderation"] = portion
-            pr["price_ponderated"] = pr["price"] * portion
-
-        # Should the sum of the weight not exceed 1?
-        total = sum([ pr["price_ponderation"] for pr in f_prices])
-        for pr in f_prices:
-            pr["price_ponderation"] = pr["price_ponderation"] / total
+            pr["price_ponderated"] = pr["price"] * pr["ponderation"]
+            pr["price_ponderation"] = pr["ponderation"] / total
 
         return f_prices
 
