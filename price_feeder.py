@@ -270,7 +270,7 @@ if __name__ == '__main__':
         config = json.loads(os.environ['PRICE_FEEDER_CONFIG'])
     else:
         if not options.config:
-            config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.json')
+            config_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'enviroments', 'moc-testnet', 'config.json')
         else:
             config_path = options.config
 
@@ -280,7 +280,7 @@ if __name__ == '__main__':
         network = os.environ['PRICE_FEEDER_NETWORK']
     else:
         if not options.network:
-            network = 'rdocTestnet'
+            network = 'mocTestnet'
         else:
             network = options.network
 
