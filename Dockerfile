@@ -21,6 +21,7 @@ RUN mkdir /home/www-data && mkdir /home/www-data/app \
     && mkdir /home/www-data/app/price_feeder
 
 WORKDIR /home/www-data/app/price_feeder/
+COPY engines/*.py ./engines/
 COPY price_feeder.py ./
 COPY price_engines.py ./
 COPY config.json ./

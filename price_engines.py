@@ -14,11 +14,11 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-import requests
-import datetime
-from statistics import median, mean
+import requests, engines, click
 import numpy as np
-from pprint import pformat
+from statistics import median, mean
+from tabulate import tabulate
+
 
 
 def weighted_median(values, weights):
@@ -57,359 +57,6 @@ weighted median is computed as follows:
     return values_sorted[median_index]
 
 
-class PriceEngineBase(object):
-    name = "base_engine"
-    description = "Base Engine"
-    uri = "http://api.pricefetcher.com/BTCUSD"
-    convert = "BTC_USD"
-
-    def __init__(self, log, timeout=10, uri=None):
-        self.log = log
-        self.timeout = timeout
-        if uri:
-            self.uri = uri
-
-    def send_alarm(self, message, level=0):
-        self.log.error(message)
-
-    def fetch(self, session):
-
-        try:
-            response = session.get(self.uri, timeout=self.timeout)
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as http_err:
-            err_msg = "Error! Error response from server on get price. Engine: {0}. {1}".format(self.name, http_err)
-            self.send_alarm(err_msg)
-            return None, err_msg
-        except Exception as err:
-            err_msg = "Error. Error response from server on get price. Engine: {0}. {1}".format(self.name, err)
-            self.send_alarm(err_msg)
-            return None, err_msg
-
-        if not response:
-            err_msg = "Error! No response from server on get price. Engine: {0}".format(self.name)
-            self.send_alarm(err_msg)
-            return None, err_msg
-
-        if response.status_code != 200:
-            err_msg = "Error! Error response from server on get price. Engine: {0}".format(self.name)
-            self.send_alarm(err_msg)
-            return None, err_msg
-
-        return response, ""
-
-    @staticmethod
-    def map(response_json):
-
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['last'])
-        d_price_info['volume'] = float(response_json['volume'])
-        d_price_info['timestamp'] = datetime.datetime.utcfromtimestamp(int(response_json['timestamp']))
-
-        return d_price_info
-
-    def get_price(self, session):
-
-        r, err_msg = self.fetch(session)
-        if not r:
-            return None, err_msg
-
-        try:
-            response_json = r.json()
-            d_price_info = self.map(response_json)
-        except Exception as err:
-            #err_msg = "Error. Error response from server on get price. Engine: {0}. {1}".format(self.name, err)
-            err_msg = "Error. Error response from server on get price. Engine: {0}. ".format(self.name)
-            self.send_alarm(err_msg)
-            return None, err_msg
-
-        return d_price_info, None
-
-
-class BitstampBTCUSD(PriceEngineBase):
-    name = "bitstamp_btc_usd"
-    description = "Bitstamp"
-    uri = "https://www.bitstamp.net/api/v2/ticker/btcusd/"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['last'])
-        d_price_info['volume'] = float(response_json['volume'])
-        d_price_info['timestamp'] = datetime.datetime.utcfromtimestamp(int(response_json['timestamp']))
-
-        return d_price_info
-
-
-class CoinBaseBTCUSD(PriceEngineBase):
-    name = "coinbase_btc_usd"
-    description = "Coinbase"
-    #uri = "https://api.coinbase.com/v2/prices/BTC-USD/buy"
-    uri = "https://api.coinbase.com/v2/prices/spot?currency=USD"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['data']['amount'])
-        d_price_info['volume'] = 0.0
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class BitGOBTCUSD(PriceEngineBase):
-    name = "bitgo_btc_usd"
-    description = "BitGO"
-    uri = "https://www.bitgo.com/api/v1/market/latest"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['latest']['currencies']['USD']['last'])
-        d_price_info['volume'] = float(response_json['latest']['currencies']['USD']['total_vol'])
-        d_price_info['timestamp'] = datetime.datetime.utcfromtimestamp(
-            int(response_json['latest']['currencies']['USD']['timestamp']))
-
-        return d_price_info
-
-
-class BitfinexBTCUSD(PriceEngineBase):
-    name = "bitfinex_btc_usd"
-    description = "Bitfinex"
-    uri = "https://api-pub.bitfinex.com/v2/ticker/tBTCUSD"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json[6])
-        d_price_info['volume'] = float(response_json[7])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class BlockchainBTCUSD(PriceEngineBase):
-    name = "blockchain_btc_usd"
-    description = "Blockchain"
-    uri = "https://blockchain.info/ticker"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['USD']['last'])
-        d_price_info['volume'] = 0.0
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class BinanceBTCUSD(PriceEngineBase):
-    name = "binance_btc_usd"
-    description = "Binance"
-    uri = "https://api.binance.com/api/v1/ticker/24hr?symbol=BTCUSDT"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['lastPrice'])
-        d_price_info['volume'] = float(response_json['volume'])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class KucoinBTCUSD(PriceEngineBase):
-    name = "kucoin_btc_usd"
-    description = "Binance"
-    uri = "https://api.kucoin.com/api/v1/market/stats?symbol=BTC-USDT"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['data']['last'])
-        d_price_info['volume'] = float(response_json['data']['vol'])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class KrakenBTCUSD(PriceEngineBase):
-    name = "kraken_btc_usd"
-    description = "Kraken"
-    uri = "https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['result']['XXBTZUSD']['c'][0])
-        d_price_info['volume'] = float(response_json['result']['XXBTZUSD']['v'][1])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class BittrexBTCUSD(PriceEngineBase):
-    name = "bittrex_btc_usd"
-    description = "Bittrex"
-    uri = "https://api.bittrex.com/api/v1.1/public/getticker?market=USD-BTC"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['result']['Last'])
-        d_price_info['volume'] = 0.0
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class GeminiBTCUSD(PriceEngineBase):
-    name = "gemini_btc_usd"
-    description = "Gemini"
-    uri = "https://api.gemini.com/v1/pubticker/BTCUSD"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['last'])
-        d_price_info['volume'] = 0.0
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class OkCoinBTCUSD(PriceEngineBase):
-    name = "okcoin_btc_usd"
-    description = "OkCoin"
-    uri = "https://www.okcoin.com/api/spot/v3/instruments/BTC-USD/ticker"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['last'])
-        d_price_info['volume'] = 0.0
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class ItBitBTCUSD(PriceEngineBase):
-    name = "itbit_btc_usd"
-    description = "ItBit"
-    uri = "https://api.itbit.com/v1/markets/XBTUSD/ticker"
-    convert = "BTC_USD"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['lastPrice'])
-        d_price_info['volume'] = 0.0
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-# RIF BTC
-
-
-class BitfinexRIFBTC(PriceEngineBase):
-    name = "bitfinex_rif_btc"
-    description = "Bitfinex RIF"
-    uri = "https://api-pub.bitfinex.com/v2/ticker/tRIFBTC"
-    convert = "RIF_BTC"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json[6])
-        d_price_info['volume'] = float(response_json[7])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class BithumbproRIFBTC(PriceEngineBase):
-    name = "bithumbpro_rif_btc"
-    description = "BitHumb RIF"
-    uri = "https://global-openapi.bithumb.pro/openapi/v1/spot/ticker?symbol=RIF-BTC"
-    convert = "RIF_BTC"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['data'][0]['c'])
-        d_price_info['volume'] = float(response_json['data'][0]['v'])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class KucoinRIFBTC(PriceEngineBase):
-    name = "kucoin_rif_btc"
-    description = "Kucoin RIF"
-    uri = "https://openapi-v2.kucoin.com/api/v1/market/orderbook/level1?symbol=RIF-BTC"
-    convert = "RIF_BTC"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['data']['price'])
-        d_price_info['volume'] = float(response_json['data']['size'])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-class CoinbeneRIFBTC(PriceEngineBase):
-    name = "coinbene_rif_btc"
-    description = "coinbene RIF"
-    uri = "http://api.coinbene.com/v1/market/ticker?symbol=RIFBTC"
-    convert = "RIF_BTC"
-
-    @staticmethod
-    def map(response_json):
-        d_price_info = dict()
-        d_price_info['price'] = float(response_json['ticker'][0]['last'])
-        d_price_info['volume'] = float(response_json['ticker'][0]['24hrVol'])
-        d_price_info['timestamp'] = datetime.datetime.now()
-
-        return d_price_info
-
-
-btc_usd_engines_names = {
-    "coinbase": CoinBaseBTCUSD,
-    "bitstamp": BitstampBTCUSD,
-    "bitgo": BitGOBTCUSD,
-    "bitfinex": BitfinexBTCUSD,
-    "blockchain": BlockchainBTCUSD,
-    "bittrex": BittrexBTCUSD,
-    "kraken": KrakenBTCUSD,
-    "kucoin": KucoinBTCUSD,
-    "binance": BinanceBTCUSD,
-    "gemini": GeminiBTCUSD,
-    "okcoin": OkCoinBTCUSD,
-    "itbit": ItBitBTCUSD
-}
-
-rif_btc_engines_names = {
-    "bitfinex_rif": BitfinexRIFBTC,
-    "bithumbpro_rif": BithumbproRIFBTC,
-    "kucoin_rif": KucoinRIFBTC,
-    "coinbene_rif": CoinbeneRIFBTC
-}
-
-
 class LogMeta(object):
 
     @staticmethod
@@ -435,9 +82,9 @@ class PriceEngines(object):
         # engine names
         if not engines_names:
             if app_mode == 'MoC':
-                engines_names = btc_usd_engines_names
+                engines_names = engines.pairs['BTC_USD']
             elif app_mode == 'RIF':
-                engines_names = rif_btc_engines_names
+                engines_names = engines.pairs['RIF_BTC']
             else:
                 raise Exception("Not valid app mode")
 
@@ -459,10 +106,11 @@ class PriceEngines(object):
 
             d_engine = dict()
             d_engine["engine"] = i_engine
-            d_engine["ponderation"] = price_engine["ponderation"]
-            d_engine["min_volume"] = price_engine["min_volume"]
-            d_engine["max_delay"] = price_engine["max_delay"]
-            d_engine["name"] = engine_name
+            d_engine["name"]   = engine_name
+
+            for key in ["ponderation", "min_volume", "max_delay"]:
+                d_engine[key] = price_engine[key]
+
             self.engines.append(d_engine)
 
     def fetch_prices(self, session=None):
@@ -475,14 +123,14 @@ class PriceEngines(object):
         for engine in self.engines:
             d_price, err_msg = engine["engine"].get_price(session)
             if d_price:
+
                 i_price = dict()
-                i_price['name'] = engine["name"]
-                i_price['ponderation'] = engine["ponderation"]
-                i_price['price'] = d_price["price"]
-                i_price['volume'] = d_price["volume"]
-                i_price['timestamp'] = d_price["timestamp"]
-                i_price['min_volume'] = engine["min_volume"]
-                i_price['max_delay'] = engine["max_delay"]
+
+                for key in ["name", "ponderation", "min_volume", "max_delay"]:
+                    i_price[key] = engine[key]
+
+                for key in ["price", "volume", "timestamp"]:
+                    i_price[key] = d_price[key]
 
                 if i_price["min_volume"] > 0:
                     # the evalution of volume is on
@@ -510,30 +158,14 @@ class PriceEngines(object):
 
         f_prices = self.fetch_prices(session=session)
 
-        missing_portions = 0.0
-
         if len(f_prices) < 1:
             raise Exception("At least we need 1 price sources.")
 
-        if len(f_prices) != len(self.engines):
-
-            l_fetched = list()
-            for pr in f_prices:
-                l_fetched.append(pr['name'])
-
-            # we have to recalculate the ponderation, some price is missing
-            for d_engine in self.engines:
-                if d_engine["name"] not in l_fetched:
-                    missing_portions += d_engine["ponderation"]
-
-        eq_missing_portions = missing_portions / len(f_prices)
-
+        # The sum of the weight must not exceed 1
+        total = sum([ pr["ponderation"] for pr in f_prices])
         for pr in f_prices:
-            portion = pr["ponderation"] + eq_missing_portions
-            pr["price_ponderation"] = portion
-            pr["price_ponderated"] = pr["price"] * portion
-
-        #self.log.info(pformat(f_prices))
+            pr["price_ponderated"] = pr["price"] * pr["ponderation"]
+            pr["price_ponderation"] = pr["ponderation"] / total
 
         return f_prices
 
@@ -559,6 +191,37 @@ class PriceEngines(object):
 
 if __name__ == '__main__':
 
+    session = requests.Session()
+
+    display_table = []
+    titles = ['Pair', 'Exchange', 'Price', 'Volume', 'Timestamp']
+
+    for pair, d_engines in engines.pairs.items():
+        with click.progressbar(d_engines.items(), label=pair) as bar:
+            for name, Engine in bar:
+                engine = Engine(LogMeta())
+                d_price, foo = engine.get_price(session)
+                d_row = d_price if d_price else  {'price': 'Error', 'volume': 'Error', 'timestamp': 'Error'}
+                for key in ['convert', 'description']:
+                    d_row[key] = getattr(engine, key)
+                l_row = []
+                for key in ['convert', 'description', 'price', 'volume', 'timestamp']:
+                    l_row.append(d_row[key])
+                display_table.append(l_row)
+
+
+    print()
+    print('Test of all engines')
+    print('==== == === =======')
+    print()
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
+    print()
+
+    print()
+    print('Weighted Median Test')
+    print('======== ====== ====')
+    print()
+
     price_options_test = [
         {"name": "bitfinex_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
         {"name": "bithumbpro_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
@@ -566,25 +229,51 @@ if __name__ == '__main__':
         {"name": "coinbene_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
     ]
 
+    btc_price = 9050
+
     pr_engine = PriceEngines(price_options_test, app_mode='RIF')
     we_prices = pr_engine.get_weighted()
     we_median = pr_engine.get_weighted_median(we_prices)
 
-    md_header = '''
-    | Name        | Price        | Ponderation    |   Original Ponderation    |             |
-    | :--------:  | :----------- | ------------   | -------------------- |-------------------- |
-    '''
-    print(md_header)
-
-    btc_price = 9050
-
+    titles = ['Name', 'Price', 'Ponderation', 'Original Ponderation']
+    display_table = []
     for we_price in we_prices:
-        print("| {name} |  {price} | {ponderation} | {o_ponderation} |  |".format(
-            name=we_price['name'],
-            price=we_price['price'] * btc_price,
-            ponderation=format(we_price['price_ponderation'], '.4f'),
-            ponderated=format(we_price['price_ponderated'], '.4f'),
-            o_ponderation=we_price['ponderation']))
+        row = []
+        row.append(we_price['name'])
+        row.append(we_price['price'] * btc_price)
+        row.append(we_price['price_ponderation'])
+        row.append(we_price['ponderation'])
+        display_table.append(row)
+
+    print("")
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
     print("")
     print("**Weighted median:** {0}".format(we_median * btc_price))
+    print("")
+
+    price_options_test = [
+        {"name": "binance", "ponderation": 1.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitstamp", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "coinbase", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex", "ponderation": 0, "min_volume": 0.0, "max_delay": 0}
+    ]
+
+    pr_engine = PriceEngines(price_options_test, app_mode='MoC')
+    we_prices = pr_engine.get_weighted()
+    we_median = pr_engine.get_weighted_median(we_prices)
+
+    titles = ['Name', 'Price', 'Ponderation', 'Original Ponderation']
+    display_table = []
+    for we_price in we_prices:
+        row = []
+        row.append(we_price['name'])
+        row.append(we_price['price'])
+        row.append(we_price['price_ponderation'])
+        row.append(we_price['ponderation'])
+        display_table.append(row)
+
+    print("")
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
+    print("")
+    print("**Weighted median:** {0}".format(we_median ))
     print("")
