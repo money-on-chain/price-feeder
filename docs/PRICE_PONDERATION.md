@@ -1,5 +1,5 @@
 # Price ponderation
-
+(Those are just examples, not actual ponderations)
 ### Price BTC-USD ticker
 
 | Nº        | Name        | Ponderation    | Api ticker URI  |
