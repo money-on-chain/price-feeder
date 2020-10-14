@@ -9,8 +9,9 @@
 | 3 |  bitstamp | 0.1918 | https://www.bitstamp.net/api/v2/ticker/btcusd/ |
 | 4 |  kraken | 0.1608 | https://api.kraken.com/0/public/Ticker?pair=XXBTZUSD |
 | 5 |  gemini | 0,0880 | https://api.gemini.com/v2/ticker/BTCUSD |
-| 6 |  okcoin | 0,0680 | https://www.okcoin.com/api/spot/v3/instruments/BTC-USD/ticker |
-| 7 |  itbit | 0,0696 | https://api.itbit.com/v1/markets/XBTUSD/ticker |
+| 6 |  okcoin* | 0,0680 | https://www.okcoin.com/api/spot/v3/instruments/BTC-USD/ticker |
+| 7 |  itbit* | 0,0696 | https://api.itbit.com/v1/markets/XBTUSD/ticker |
+*Not longer in use
 
 
 #### Example 1
@@ -23,8 +24,9 @@
 | kraken |  7.554,2000 | 0,1608 |  |
 | coinbase | 7.546,9150 | 0,2350 | <---- |
 | gemini | 7.545,2800 | 0,0880 | |
-| okcoin | 7.549,6200 | 0,0680 | |
-| itbit | 7.554,7500 | 0,0696 | |
+| okcoin* | 7.549,6200 | 0,0680 | |
+| itbit* | 7.554,7500 | 0,0696 | |
+*Not longer in use 
 
 
 **Weighted median:** 7546,915
@@ -38,8 +40,9 @@
 | kraken |  7.538,1000 | 0,1608 |  |
 | coinbase | 7.535,4550 | 0,2350 |  |
 | gemini | 7.533,7100 | 0,0880 | |
-| okcoin | 7.536,8300 | 0,0680 | |
-| itbit | 7.536,7500 | 0,0696 | |
+| okcoin* | 7.536,8300 | 0,0680 | |
+| itbit* | 7.536,7500 | 0,0696 | |
+*Not longer in use
 
 
 **Weighted median:** 7.535,99
@@ -54,8 +57,10 @@
 | kraken |  7.553,3000 | 0,2121 |  |
 | coinbase | 7.554,9950 | 0,2863 | <---- |
 | gemini | 7.550,0000 | 0,1393 | |
-| okcoin | 7.546,0100 | 0,1193 | |
-| itbit | - | - | |
+| okcoin* | 7.546,0100 | 0,1193 | |
+| itbit* | - | - | |
+*Not longer in use
+
 
 **Weighted median:** 7554,995
 
