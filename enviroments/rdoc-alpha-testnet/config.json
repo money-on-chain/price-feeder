@@ -20,10 +20,8 @@
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
       "price_engines": [
-        {"name": "bitfinex_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
-        {"name": "bithumbpro_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
-        {"name": "kucoin_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
-        {"name": "coinbene_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
+        {"name": "bithumbpro_rif", "ponderation": 0.5, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kucoin_rif", "ponderation": 0.5, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
         "MoCMedianizer": "0x2B54819531B7126bDEE2CeFDD9c5342d6c307595",
