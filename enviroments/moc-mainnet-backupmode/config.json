@@ -7,6 +7,7 @@
   "gas_price": 60000000,
   "networks": {
     "mocMainnet2": {
+      "price_floor": 0,
       "app_mode": "MoC",
       "uri": ["https://public-node.rsk.co"],
       "chain_id": 30,

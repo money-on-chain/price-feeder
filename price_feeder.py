@@ -145,7 +145,14 @@ class PriceFeederJob:
         elif self.options['networks'][self.network]['app_mode'] == 'RIF':
             price_no_precision = self.get_price_rif()
         else:
-            raise Exception("Error! Config app_mode not recognize!")
+            raise Exception("Error! Config app_mode not recognize!")      
+
+        # if the price is below the floor, I overwrite it
+        price_floor = self.options['networks'][self.network].get('price_floor', None)
+        if price_floor != None:
+            price_floor = decimal.Decimal(str(price_floor))
+        if price_floor and price_floor>price_no_precision:
+            price_no_precision = price_floor
 
         # is outside the range so we need to write to blockchain
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
