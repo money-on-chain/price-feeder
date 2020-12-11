@@ -147,12 +147,11 @@ class PriceFeederJob:
         else:
             raise Exception("Error! Config app_mode not recognize!")      
 
-        # if the price is below the floor, I overwrite it
+        # if the price is below the floor, I don't publish it
         price_floor = self.options['networks'][self.network].get('price_floor', None)
         if price_floor != None:
             price_floor = decimal.Decimal(str(price_floor))
-        if price_floor and price_floor>price_no_precision:
-            price_no_precision = price_floor
+        not_under_the_floor = not(price_floor and price_floor>price_no_precision)
 
         # is outside the range so we need to write to blockchain
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
@@ -169,7 +168,7 @@ class PriceFeederJob:
             is_in_time))
 
         # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time):
+        if not_under_the_floor and (is_in_range or (not is_in_range and is_in_time)):
 
             # set the precision to price
             price_to_set = price_no_precision * 10 ** 18
