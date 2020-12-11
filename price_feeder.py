@@ -25,8 +25,8 @@ import boto3
 import time
 import decimal
 from moneyonchain.manager import ConnectionManager
-from moneyonchain.moc import MoCMedianizer, PriceFeed
-from moneyonchain.rdoc import RDOCMoCMedianizer, RDOCPriceFeed
+from moneyonchain.moc import MoCMedianizer, PriceFeed, MoCState
+from moneyonchain.rdoc import RDOCMoCMedianizer, RDOCPriceFeed, RDOCMoCState
 
 # local imports
 from price_engines import PriceEngines
@@ -62,11 +62,17 @@ class PriceFeederJob:
                 self.options['networks'][network]['addresses']['RIF_source_price_btc'])
             self.contract_moc_medianizer = RDOCMoCMedianizer(self.connection_manager,
                                                              contract_address=address_contract_moc_medianizer)
+            self.contract_moc_state = RDOCMoCState(self.connection_manager)
+
         elif self.app_mode == 'MoC':
             self.contract_medianizer = MoCMedianizer(self.connection_manager)
             self.contract_price_feed = PriceFeed(self.connection_manager)
+            self.contract_moc_state = MoCState(self.connection_manager)
+        
         else:
             raise Exception("Not valid APP Mode")
+
+        
 
         self.tl = Timeloop()
         self.last_price = 0.0

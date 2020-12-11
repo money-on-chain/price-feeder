@@ -24,6 +24,7 @@
         {"name": "kucoin_rif", "ponderation": 0.5, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0x496eD67F77D044C8d9471fe86085Ccb5DC4d2f63",
         "MoCMedianizer": "0x9d4b2c05818A0086e641437fcb64ab6098c7BbEc",
         "PriceFeed": "0x462D7082F3671a3BE160638Be3f8C23Ca354F48A",
         "RIF_source_price_btc": "0x667bd3d048FaEBb85bAa0E9f9D87cF4c8CDFE849"

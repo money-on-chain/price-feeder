@@ -27,6 +27,7 @@
         {"name": "gemini", "ponderation": 0.06432022093, "min_volume":  0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0xfb526c0Ace90f52049691389B040a33D03343eb7",
         "MoCMedianizer": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4",
         "PriceFeed": "0x033c1D78Fbc34178A7Ee7fa64Fa6f31fEE8f79C2",
         "RIF_source_price_btc": ""
@@ -54,6 +55,7 @@
         {"name": "gemini", "ponderation": 0.06432022093, "min_volume":  0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0x0adb40132cB0ffcEf6ED81c26A1881e214100555",
         "MoCMedianizer": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4",
         "PriceFeed": "0x033c1D78Fbc34178A7Ee7fa64Fa6f31fEE8f79C2",
         "RIF_source_price_btc": ""
@@ -81,6 +83,7 @@
         {"name": "gemini", "ponderation": 0.06432022093, "min_volume":  0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0xb9C42EFc8ec54490a37cA91c423F7285Fa01e257",
         "MoCMedianizer": "0x7B19bb8e6c5188eC483b784d6fB5d807a77b21bF",
         "PriceFeed": "0xfE05Ee3d651670F807Db7dD56e1E0FCBa29B234a",
         "RIF_source_price_btc": ""
@@ -104,6 +107,7 @@
         {"name": "kucoin_rif", "ponderation": 0.5, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0xB80C23576053A1a5278C1a43DC8471F432f77245",
         "MoCMedianizer": "0x2B54819531B7126bDEE2CeFDD9c5342d6c307595",
         "PriceFeed": "0x652255254E79CD0954Bdd8B72ED00D9614Eba6A8",
         "RIF_source_price_btc": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4"
@@ -128,6 +132,7 @@
         {"name": "kucoin_rif", "ponderation": 0.5, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0x496eD67F77D044C8d9471fe86085Ccb5DC4d2f63",
         "MoCMedianizer": "0x9d4b2c05818A0086e641437fcb64ab6098c7BbEc",
         "PriceFeed": "0x462D7082F3671a3BE160638Be3f8C23Ca354F48A",
         "RIF_source_price_btc": "0x667bd3d048FaEBb85bAa0E9f9D87cF4c8CDFE849"
@@ -152,6 +157,7 @@
         {"name": "kucoin_rif", "ponderation": 0.5, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0x541F68a796Fe5ae3A381d2Aa5a50b975632e40A6",
         "MoCMedianizer": "0x504EfCadFB020d6bBaeC8a5c5BB21453719d0E00",
         "PriceFeed": "0x461750b4824b14c3d9b7702bC6fBB82469082b23",
         "RIF_source_price_btc": "0x7B19bb8e6c5188eC483b784d6fB5d807a77b21bF"
