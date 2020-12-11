@@ -7,7 +7,7 @@
   "gas_price": 60000000,
   "networks": {
      "mocTestnetAlpha": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.265",
       "app_mode": "MoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
@@ -35,7 +35,7 @@
 
     },
     "mocTestnet": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.265",
       "app_mode": "MoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
@@ -63,7 +63,7 @@
 
     },
     "mocMainnet2": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.265",
       "app_mode": "MoC",
       "uri": ["https://public-node.rsk.co"],
       "chain_id": 30,
@@ -90,7 +90,7 @@
       }
     },
     "rdocTestnetAlpha": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.193",
       "app_mode": "RIF",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
@@ -115,7 +115,7 @@
 
     },
     "rdocTestnet": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.193",
       "app_mode": "RIF",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
@@ -140,7 +140,7 @@
 
     },
     "rdocMainnet": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.193",
       "app_mode": "RIF",
       "uri": ["https://public-node.rsk.co"],
       "chain_id": 30,

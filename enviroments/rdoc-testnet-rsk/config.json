@@ -7,7 +7,7 @@
   "gas_price": 60000000,
   "networks": {
     "rdocTestnet": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.193",
       "app_mode": "RIF",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,

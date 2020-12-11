@@ -7,7 +7,7 @@
   "gas_price": 68000000,
   "networks": {
     "mocTestnet": {
-      "price_floor": 0,
+      "price_floor": "ema * 0.265",
       "app_mode": "MoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,

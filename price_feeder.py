@@ -156,7 +156,13 @@ class PriceFeederJob:
         # if the price is below the floor, I don't publish it
         price_floor = self.options['networks'][self.network].get('price_floor', None)
         if price_floor != None:
-            price_floor = decimal.Decimal(str(price_floor))
+            price_floor = str(price_floor)
+            ema = self.contract_moc_state.bitcoin_moving_average()
+            kargs = {'ema': float(ema)}
+            try:
+                price_floor = decimal.Decimal(str(eval(price_floor, kargs)))
+            except Exception as e:
+                raise ValueError('price_floor: {}'.format(e))
         not_under_the_floor = not(price_floor and price_floor>price_no_precision)
 
         # is outside the range so we need to write to blockchain
