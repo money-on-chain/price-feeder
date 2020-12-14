@@ -7,6 +7,7 @@
   "gas_price": 68000000,
   "networks": {
     "mocTestnet": {
+      "price_floor": "ema * 0.265",
       "app_mode": "MoC",
       "uri": ["https://public-node.testnet.rsk.co"],
       "chain_id": 31,
@@ -26,6 +27,7 @@
         {"name": "gemini", "ponderation": 0.06432022093, "min_volume":  0.0, "max_delay": 0}
       ],
       "addresses": {
+        "MoCState": "0x0adb40132cB0ffcEf6ED81c26A1881e214100555",
         "MoCMedianizer": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4",
         "PriceFeed": "0x033c1D78Fbc34178A7Ee7fa64Fa6f31fEE8f79C2",
         "RIF_source_price_btc": ""

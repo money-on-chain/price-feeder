@@ -25,8 +25,8 @@ import boto3
 import time
 import decimal
 from moneyonchain.manager import ConnectionManager
-from moneyonchain.moc import MoCMedianizer, PriceFeed
-from moneyonchain.rdoc import RDOCMoCMedianizer, RDOCPriceFeed
+from moneyonchain.moc import MoCMedianizer, PriceFeed, MoCState
+from moneyonchain.rdoc import RDOCMoCMedianizer, RDOCPriceFeed, RDOCMoCState
 
 # local imports
 from price_engines import PriceEngines
@@ -62,11 +62,17 @@ class PriceFeederJob:
                 self.options['networks'][network]['addresses']['RIF_source_price_btc'])
             self.contract_moc_medianizer = RDOCMoCMedianizer(self.connection_manager,
                                                              contract_address=address_contract_moc_medianizer)
+            self.contract_moc_state = RDOCMoCState(self.connection_manager)
+
         elif self.app_mode == 'MoC':
             self.contract_medianizer = MoCMedianizer(self.connection_manager)
             self.contract_price_feed = PriceFeed(self.connection_manager)
+            self.contract_moc_state = MoCState(self.connection_manager)
+        
         else:
             raise Exception("Not valid APP Mode")
+
+        
 
         self.tl = Timeloop()
         self.last_price = 0.0
@@ -145,7 +151,19 @@ class PriceFeederJob:
         elif self.options['networks'][self.network]['app_mode'] == 'RIF':
             price_no_precision = self.get_price_rif()
         else:
-            raise Exception("Error! Config app_mode not recognize!")
+            raise Exception("Error! Config app_mode not recognize!")      
+
+        # if the price is below the floor, I don't publish it
+        price_floor = self.options['networks'][self.network].get('price_floor', None)
+        if price_floor != None:
+            price_floor = str(price_floor)
+            ema = self.contract_moc_state.bitcoin_moving_average()
+            kargs = {'ema': float(ema)}
+            try:
+                price_floor = decimal.Decimal(str(eval(price_floor, kargs)))
+            except Exception as e:
+                raise ValueError('price_floor: {}'.format(e))
+        not_under_the_floor = not(price_floor and price_floor>price_no_precision)
 
         # is outside the range so we need to write to blockchain
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
@@ -162,7 +180,7 @@ class PriceFeederJob:
             is_in_time))
 
         # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time):
+        if not_under_the_floor and (is_in_range or (not is_in_range and is_in_time)):
 
             # set the precision to price
             price_to_set = price_no_precision * 10 ** 18
