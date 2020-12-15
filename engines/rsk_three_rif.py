@@ -5,7 +5,7 @@ import datetime
 class Engine(Base):
     name        = "rsk_three_rif_btc"
     description = "RSK three RIF"
-    uri         = "http://134.209.68.142:3000"
+    uri         = "http://pricing.teksfeeder.com"
     convert     = "RIF_BTC"
 
     @staticmethod
