@@ -3,6 +3,6 @@ timeloop
 boto3
 numpy
 requests
-moneyonchain>=0.0.45
+moneyonchain==0.0.45
 tabulate
 click

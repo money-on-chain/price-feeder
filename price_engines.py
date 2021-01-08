@@ -167,7 +167,29 @@ class PriceEngines(object):
             pr["price_ponderated"] = pr["price"] * pr["ponderation"]
             pr["price_ponderation"] = pr["ponderation"] / total
 
+        self.report_exchanges(f_prices)
+
         return f_prices
+
+    def report_exchanges(self, ex_prices):
+
+        rep_titles = ['Name', 'Price', 'Ponderation', 'Price Ponderated', 'Price ponderation']
+        d_table = []
+        for ex_price in ex_prices:
+            ex_row = list()
+            ex_row.append(ex_price['name'])
+            ex_row.append(ex_price['price'])
+            ex_row.append(ex_price['ponderation'])
+            ex_row.append(ex_price['price_ponderated'])
+            ex_row.append(ex_price['price_ponderation'])
+            d_table.append(ex_row)
+
+        # order table by price
+        o_table = sorted(d_table, key=lambda k: k[1])
+
+        self.log.info("")
+        self.log.info("\n%s" % tabulate(o_table, headers=rep_titles, tablefmt="pipe"))
+        self.log.info("")
 
     @staticmethod
     def get_weighted_median(fetch_weighted_prices):
