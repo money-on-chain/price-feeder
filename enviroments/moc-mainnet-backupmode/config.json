@@ -22,9 +22,9 @@
       "price_engines": [
         {"name": "bitstamp", "ponderation": 0.22, "min_volume":  0.0, "max_delay": 0},
         {"name": "bitfinex", "ponderation": 0.18, "min_volume":  0.0, "max_delay": 0},
-        {"name": "kraken",   "ponderation": 0.18, "min_volume":  0.0, "max_delay": 0},
+        {"name": "kraken", "ponderation": 0.18, "min_volume":  0.0, "max_delay": 0},
         {"name": "coinbase", "ponderation": 0.25, "min_volume":  0.0, "max_delay": 0},
-        {"name": "gemini",   "ponderation": 0.17, "min_volume":  0.0, "max_delay": 0}
+        {"name": "gemini", "ponderation": 0.17, "min_volume":  0.0, "max_delay": 0}
       ],
       "addresses": {
         "MoCState": "0xb9C42EFc8ec54490a37cA91c423F7285Fa01e257",
