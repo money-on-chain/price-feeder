@@ -40,7 +40,7 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 log = logging.getLogger('default')
-log.info("Starting Price Feeder version 1.6")
+log.info("Starting Price Feeder version 1.7")
 
 
 class PriceFeederJob:
@@ -117,7 +117,7 @@ class PriceFeederJob:
     def get_price_rif(self):
 
         btc_usd_price = self.contract_moc_medianizer.price()
-        btc_rif_price = decimal.Decimal(self.price_source.prices_weighted_median())
+        btc_rif_price = decimal.Decimal(self.price_source.prices_weighted_median(btc_price_assign=btc_usd_price))
 
         usd_rif_price = btc_rif_price * btc_usd_price
 
@@ -172,7 +172,7 @@ class PriceFeederJob:
         # is more than 5 minutes from the last write
         is_in_time = (self.last_price_timestamp + datetime.timedelta(seconds=300) < now)
 
-        log.info("[PRICE FEED] ORACLE: [{0:.4f}] MIN: [{1:.4f}] MAX: [{2:.4f}] NEW: [{3:.4f}] IS IN RANGE: [{4}] IS IN TIME: [{5}]".format(
+        log.info("[PRICE FEED] ORACLE: [{0:.6f}] MIN: [{1:.6f}] MAX: [{2:.6f}] NEW: [{3:.6f}] IS IN RANGE: [{4}] IS IN TIME: [{5}]".format(
             last_price_oracle,
             min_price,
             max_price,
