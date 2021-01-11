@@ -18,6 +18,7 @@ import requests, engines, click
 import numpy as np
 from statistics import median, mean
 from tabulate import tabulate
+import decimal
 
 
 
@@ -154,7 +155,7 @@ class PriceEngines(object):
 
         return mean(prices)
 
-    def get_weighted(self, session=None):
+    def get_weighted(self, session=None, btc_price_assign=None):
 
         f_prices = self.fetch_prices(session=session)
 
@@ -167,20 +168,26 @@ class PriceEngines(object):
             pr["price_ponderated"] = pr["price"] * pr["ponderation"]
             pr["price_ponderation"] = pr["ponderation"] / total
 
-        self.report_exchanges(f_prices)
+        self.report_exchanges(f_prices, btc_price_assign=btc_price_assign)
 
         return f_prices
 
-    def report_exchanges(self, ex_prices):
+    def report_exchanges(self, ex_prices, btc_price_assign=None):
 
         rep_titles = ['Name', 'Price', 'Ponderation', 'Price Ponderated', 'Price ponderation']
         d_table = []
         for ex_price in ex_prices:
             ex_row = list()
             ex_row.append(ex_price['name'])
-            ex_row.append(ex_price['price'])
+            if btc_price_assign:
+                ex_row.append(decimal.Decimal(ex_price['price']) * btc_price_assign)
+            else:
+                ex_row.append(ex_price['price'])
             ex_row.append(ex_price['ponderation'])
-            ex_row.append(ex_price['price_ponderated'])
+            if btc_price_assign:
+                ex_row.append(decimal.Decimal(ex_price['price_ponderated']) * btc_price_assign)
+            else:
+                ex_row.append(ex_price['price_ponderated'])
             ex_row.append(ex_price['price_ponderation'])
             d_table.append(ex_row)
 
@@ -204,9 +211,9 @@ class PriceEngines(object):
         w_median = weighted_median(l_prices, l_weights)
         return w_median
 
-    def prices_weighted_median(self):
+    def prices_weighted_median(self, btc_price_assign=None):
 
-        w_prices = self.get_weighted()
+        w_prices = self.get_weighted(btc_price_assign=btc_price_assign)
         w_median = self.get_weighted_median(w_prices)
         return w_median
 
