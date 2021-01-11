@@ -3,10 +3,10 @@ import datetime
 
 
 class Engine(Base):
-    name        = "binance_btc_usd"
-    description = "Binance"
-    uri         = "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT"
-    convert     = "BTC_USD"
+    name        = "binance_rif_btc"
+    description = "Binance RIF"
+    uri         = "https://api.binance.com/api/v3/ticker/24hr?symbol=RIFBTC"
+    convert     = "RIF_BTC"
 
     @staticmethod
     def map(response_json):

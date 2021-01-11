@@ -20,12 +20,13 @@
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
       "price_engines": [
-        {"name": "rsk_one_rif", "ponderation": 0.16666666666, "min_volume": 0.0, "max_delay": 0},
-        {"name": "rsk_two_rif", "ponderation": 0.16666666666, "min_volume": 0.0, "max_delay": 0},
-        {"name": "rsk_three_rif", "ponderation": 0.16666666666, "min_volume": 0.0, "max_delay": 0},
-        {"name": "bithumbpro_rif", "ponderation": 0.16666666666, "min_volume": 0.0, "max_delay": 0},
-        {"name": "kucoin_rif", "ponderation": 0.16666666666, "min_volume": 0.0, "max_delay": 0},
-        {"name": "coinbene_rif", "ponderation": 0.16666666666, "min_volume": 0.0, "max_delay": 0}
+        {"name": "rsk_one_rif",    "ponderation": 0.1428571429, "min_volume": 0.0, "max_delay": 0},
+        {"name": "rsk_two_rif",    "ponderation": 0.1428571429, "min_volume": 0.0, "max_delay": 0},
+        {"name": "rsk_three_rif",  "ponderation": 0.1428571429, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bithumbpro_rif", "ponderation": 0.1428571429, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kucoin_rif",     "ponderation": 0.1428571429, "min_volume": 0.0, "max_delay": 0},
+        {"name": "coinbene_rif",   "ponderation": 0.1428571429, "min_volume": 0.0, "max_delay": 0},
+        {"name": "binance_rif",    "ponderation": 0.1428571429, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
         "MoCState": "0x496eD67F77D044C8d9471fe86085Ccb5DC4d2f63",
@@ -33,8 +34,6 @@
         "PriceFeed": "0x462D7082F3671a3BE160638Be3f8C23Ca354F48A",
         "RIF_source_price_btc": "0x26a00aF444928d689DDEC7b4D17c0E4a8c9D407d"
       }
-
     }
   }
-
 }
