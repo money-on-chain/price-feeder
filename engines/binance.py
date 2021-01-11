@@ -5,7 +5,7 @@ import datetime
 class Engine(Base):
     name        = "binance_btc_usd"
     description = "Binance"
-    uri         = "https://api.binance.com/api/v1/ticker/24hr?symbol=BTCUSDT"
+    uri         = "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT"
     convert     = "BTC_USD"
 
     @staticmethod
