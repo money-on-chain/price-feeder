@@ -40,7 +40,7 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 log = logging.getLogger('default')
-log.info("Starting Price Feeder version 1.5")
+log.info("Starting Price Feeder version 1.6")
 
 
 class PriceFeederJob:
