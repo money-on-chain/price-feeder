@@ -8,6 +8,7 @@ class Base(object):
     description = "Base Engine"
     uri         = "http://api.pricefetcher.com/BTCUSD"
     convert     = "BTC_USD"
+    max_age     = 30
 
     def __init__(self, log, timeout=10, uri=None):
         self.log = log
@@ -39,6 +40,18 @@ class Base(object):
 
         if response.status_code != 200:
             err_msg = "Error! Error response from server on get price. Engine: {0}".format(self.name)
+            self.send_alarm(err_msg)
+            return None, err_msg
+
+        try:
+            age = int(response.headers['age'])
+        except ValueError:
+            age = None
+        except KeyError:
+            age = None
+
+        if age!=None and age > self.max_age:
+            err_msg = str(f"Error! Response age > {self.max_age}. Engine: {self.name}")
             self.send_alarm(err_msg)
             return None, err_msg
 
