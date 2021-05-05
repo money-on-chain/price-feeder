@@ -9,14 +9,6 @@
     "rdocTestnetAlpha": {
       "price_floor": "ema * 0.193",
       "app_mode": "RIF",
-      "uri": ["https://public-node.testnet.rsk.co"],
-      "chain_id": 31,
-      "accounts": [
-        {
-          "address": "0xA8f94D08D3D9C045fe0B86A953dF39B14206153c",
-          "private_key": ""
-        }
-      ],
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
       "price_engines": [
