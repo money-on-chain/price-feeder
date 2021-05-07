@@ -5,6 +5,7 @@ from tabulate import tabulate
 from price_engines import PriceEngines
 from engines.base import Base
 
+
 def make_fake_engine(name_, price_, error_=False):
 
     class PriceEngineFake(Base):
@@ -74,6 +75,7 @@ engines_names_4 = {
     "test_16": PriceEngineTest16
 }
 
+
 def test(price_options, engines_names):
 
     pr_engine = PriceEngines(price_options, engines_names=engines_names)
@@ -97,6 +99,7 @@ def test(price_options, engines_names):
     print("")
     print("**Weighted median:** {0}".format(we_median ))
     print("")
+
 
 if __name__ == '__main__':
 

@@ -1,0 +1,28 @@
+{
+  "backup_mode": false,
+  "backup_writes": 100,
+  "interval": 30,
+  "timeout": 60,
+  "timeout_request": 10,
+  "gas_price": 68000000,
+  "is_simulation": true,
+  "min_prices_source": 2,
+  "networks": {
+    "ethTestnet": {
+      "app_mode": "ETH",
+      "block_expiration": 600,
+      "price_variation_write_blockchain": 0.001,
+      "price_engines": [
+        {"name": "binance_eth",    "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitstamp_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex_eth","ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kraken_eth","ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "gemini_eth","ponderation": 0.2, "min_volume": 0.0, "max_delay": 0}
+      ],
+      "addresses": {
+        "MoCMedianizer": "0x4D4254D3744e1E4beb090ab5d8eB48096ff4aE27",
+        "PriceFeed": "0xEc2FA32050F5585dB4B15E60e1c21742b22740C4"
+      }
+    }
+  }
+}

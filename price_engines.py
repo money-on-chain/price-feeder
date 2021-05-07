@@ -71,7 +71,7 @@ class LogMeta(object):
 
 class PriceEngines(object):
 
-    def __init__(self, price_options, log=None, engines_names=None, app_mode='MoC'):
+    def __init__(self, price_options, log=None, engines_names=None, app_mode='MoC', min_prices=1):
         self.price_options = price_options
         self.engines = list()
 
@@ -80,12 +80,17 @@ class PriceEngines(object):
             log = LogMeta()
         self.log = log
 
+        # Minimum prices valid
+        self.min_prices = min_prices
+
         # engine names
         if not engines_names:
             if app_mode == 'MoC':
                 engines_names = engines.pairs['BTC_USD']
             elif app_mode == 'RIF':
                 engines_names = engines.pairs['RIF_BTC']
+            elif app_mode == 'ETH':
+                engines_names = engines.pairs['ETH_USD']
             else:
                 raise Exception("Not valid app mode")
 
@@ -148,6 +153,12 @@ class PriceEngines(object):
     def get_mean(self, session=None):
 
         f_prices = self.fetch_prices(session=session)
+
+        if len(f_prices) >= self.min_prices:
+            pass
+        else:
+            raise Exception("At least we need {0} price sources.".format(self.min_prices))
+
         prices = list()
         for f_price in f_prices:
             price = f_price["price"]
@@ -159,11 +170,13 @@ class PriceEngines(object):
 
         f_prices = self.fetch_prices(session=session)
 
-        if len(f_prices) < 1:
-            raise Exception("At least we need 1 price sources.")
+        if len(f_prices) >= self.min_prices:
+            pass
+        else:
+            raise Exception("At least we need {0} price sources.".format(self.min_prices))
 
         # The sum of the weight must not exceed 1
-        total = sum([ pr["ponderation"] for pr in f_prices])
+        total = sum([pr["ponderation"] for pr in f_prices])
         for pr in f_prices:
             pr["price_ponderated"] = pr["price"] * pr["ponderation"]
             pr["price_ponderation"] = pr["ponderation"] / total
@@ -230,14 +243,13 @@ if __name__ == '__main__':
             for name, Engine in bar:
                 engine = Engine(LogMeta())
                 d_price, foo = engine.get_price(session)
-                d_row = d_price if d_price else  {'price': 'Error', 'volume': 'Error', 'timestamp': 'Error'}
+                d_row = d_price if d_price else {'price': 'Error', 'volume': 'Error', 'timestamp': 'Error'}
                 for key in ['convert', 'description']:
                     d_row[key] = getattr(engine, key)
                 l_row = []
                 for key in ['convert', 'description', 'price', 'volume', 'timestamp']:
                     l_row.append(d_row[key])
                 display_table.append(l_row)
-
 
     print()
     print('Test of all engines')
@@ -250,6 +262,8 @@ if __name__ == '__main__':
     print('Weighted Median Test')
     print('======== ====== ====')
     print()
+
+    # RIF
 
     price_options_test = [
         {"name": "bitfinex_rif", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
@@ -280,6 +294,8 @@ if __name__ == '__main__':
     print("**Weighted median:** {0}".format(we_median * btc_price))
     print("")
 
+    # MOC
+
     price_options_test = [
         {"name": "binance", "ponderation": 1.25, "min_volume": 0.0, "max_delay": 0},
         {"name": "bitstamp", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
@@ -305,4 +321,34 @@ if __name__ == '__main__':
     print(tabulate(display_table, headers=titles, tablefmt="pipe"))
     print("")
     print("**Weighted median:** {0}".format(we_median ))
+    print("")
+
+    # ETH
+
+    price_options_test = [
+        {"name": "binance_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitstamp_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kraken_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "gemini_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0}
+    ]
+
+    pr_engine = PriceEngines(price_options_test, app_mode='ETH')
+    we_prices = pr_engine.get_weighted()
+    we_median = pr_engine.get_weighted_median(we_prices)
+
+    titles = ['Name', 'Price', 'Ponderation', 'Original Ponderation']
+    display_table = []
+    for we_price in we_prices:
+        row = []
+        row.append(we_price['name'])
+        row.append(we_price['price'])
+        row.append(we_price['price_ponderation'])
+        row.append(we_price['ponderation'])
+        display_table.append(row)
+
+    print("")
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
+    print("")
+    print("**Weighted median:** {0}".format(we_median))
     print("")
