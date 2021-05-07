@@ -4,8 +4,12 @@ This is the job app that feed contract (price feeder) with price BTC-USD | RIF-U
 
 Reference price (BTCUSD) for MoC system is provided via an oracle (the
 medianizer), which collates price data from a number of external price
-feeds. Take a look to
-[Oracle project](https://github.com/money-on-chain/Amphiraos-Oracle)
+feeds. Take a look to:
+
+* [Oracle project](https://github.com/money-on-chain/Amphiraos-Oracle)
+
+* [Proxy Oracle](https://github.com/money-on-chain/Proxy_Oracle): If you don't want to change oracle address
+when we change to new generation of oracle (decentralized oracle)
 
 ## Background
 
@@ -40,7 +44,7 @@ different sources ponderate the final price and saving to **price feeder
 contract**.
 
 
-## Oracle
+## Creation of price feeder
 
 First we need that the owner of the Oracle create a price feeder, this
 is created by governor of the Oracle (MoC Medianizer) contract.
@@ -135,6 +139,7 @@ price_feeder
 ## Security and Audits
 
 [Deployed Contracts](https://github.com/money-on-chain/main-RBTC-contract/blob/master/docs/Contracts%20verification.md)
+
 [Audits](https://github.com/money-on-chain/Audits)
 
 
