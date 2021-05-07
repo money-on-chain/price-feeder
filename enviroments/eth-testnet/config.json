@@ -4,7 +4,7 @@
   "interval": 30,
   "timeout": 60,
   "timeout_request": 10,
-  "gas_price": 60000000,
+  "gas_price": 68000000,
   "is_simulation": true,
   "min_prices_source": 2,
   "networks": {
@@ -20,8 +20,8 @@
         {"name": "gemini_eth","ponderation": 0.2, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
-        "MoCMedianizer": "0x9d4b2c05818A0086e641437fcb64ab6098c7BbEc",
-        "PriceFeed": "0x462D7082F3671a3BE160638Be3f8C23Ca354F48A"
+        "MoCMedianizer": "0x4D4254D3744e1E4beb090ab5d8eB48096ff4aE27",
+        "PriceFeed": "0xEc2FA32050F5585dB4B15E60e1c21742b22740C4"
       }
     }
   }
