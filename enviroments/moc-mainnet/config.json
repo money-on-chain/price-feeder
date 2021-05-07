@@ -9,14 +9,6 @@
     "mocMainnet2": {
       "price_floor": "ema * 0.265",
       "app_mode": "MoC",
-      "uri": ["https://public-node.rsk.co"],
-      "chain_id": 30,
-      "accounts": [
-        {
-          "address": "0xEA14c08764c9e5F212c916E11a5c47Eaf92571e4",
-          "private_key": ""
-        }
-      ],
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.0005,
       "price_engines": [

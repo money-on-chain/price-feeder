@@ -5,18 +5,12 @@
   "timeout": 60,
   "timeout_request": 10,
   "gas_price": 68000000,
+  "is_simulation": true,
+  "min_prices_source": 2,
   "networks": {
     "mocTestnet": {
       "price_floor": "ema * 0.265",
       "app_mode": "MoC",
-      "uri": ["https://public-node.testnet.rsk.co"],
-      "chain_id": 31,
-      "accounts": [
-        {
-          "address": "0xE2929d888015EB568AFfa06aaB946923a7236Ad9",
-          "private_key": ""
-        }
-      ],
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.0005,
       "price_engines": [

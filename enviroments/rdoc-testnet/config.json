@@ -5,18 +5,12 @@
   "timeout": 60,
   "timeout_request": 10,
   "gas_price": 60000000,
+  "is_simulation": false,
+  "min_prices_source": 1,
   "networks": {
     "rdocTestnet": {
       "price_floor": "ema * 0.193",
       "app_mode": "RIF",
-      "uri": ["https://public-node.testnet.rsk.co"],
-      "chain_id": 31,
-      "accounts": [
-        {
-          "address": "0xC67D9eE30d2119A384E02de568BE80FE785074Ba",
-          "private_key": ""
-        }
-      ],
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
       "price_engines": [
