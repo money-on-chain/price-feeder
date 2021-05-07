@@ -107,12 +107,15 @@ To test price ponderation:
 There are many networks already preconfigurated see enviroments/ folder.
 
 `export ACCOUNT_PK_SECRET=(Your PK)`
+
 `python price_feeder.py --connection_network=rskTestnetPublic --config_network=mocTestnet --config ./enviroments/moc-testnet/config.json`
 
 **Note:** Replace (Your PK) with your private key owner of the account.
 
 **--config:** Path to config.json or json content (string)
+
 **--connection_network=rskTestnetPublic:** Network connection name
+
 **--config_network=mocTestnet:** config_network reference to network in the config.
 
 
