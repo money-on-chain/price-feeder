@@ -60,7 +60,7 @@ fi
 docker image build -t moc_price_feeder_$ENV -f Dockerfile --build-arg CONFIG=$CONFIG_FILE .
 echo "Build done!"
 
-REGION = "us-west-1"
+REGION="us-west-1"
 
 # login into aws ecr
 $(aws ecr get-login --no-include-email --region $REGION)
