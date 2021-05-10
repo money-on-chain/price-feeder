@@ -90,7 +90,7 @@ class PriceEngines(object):
             elif app_mode == 'RIF':
                 engines_names = engines.pairs['RIF_BTC']
             elif app_mode == 'ETH':
-                engines_names = engines.pairs['ETH_USD']
+                engines_names = engines.pairs['ETH_BTC']
             else:
                 raise Exception("Not valid app mode")
 
@@ -323,14 +323,44 @@ if __name__ == '__main__':
     print("**Weighted median:** {0}".format(we_median ))
     print("")
 
-    # ETH
+    # # ETH USD
+    #
+    # price_options_test = [
+    #     {"name": "binance_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+    #     {"name": "bitstamp_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+    #     {"name": "bitfinex_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+    #     {"name": "kraken_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+    #     {"name": "gemini_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0}
+    # ]
+    #
+    # pr_engine = PriceEngines(price_options_test, app_mode='ETH')
+    # we_prices = pr_engine.get_weighted()
+    # we_median = pr_engine.get_weighted_median(we_prices)
+    #
+    # titles = ['Name', 'Price', 'Ponderation', 'Original Ponderation']
+    # display_table = []
+    # for we_price in we_prices:
+    #     row = []
+    #     row.append(we_price['name'])
+    #     row.append(we_price['price'])
+    #     row.append(we_price['price_ponderation'])
+    #     row.append(we_price['ponderation'])
+    #     display_table.append(row)
+    #
+    # print("")
+    # print(tabulate(display_table, headers=titles, tablefmt="pipe"))
+    # print("")
+    # print("**Weighted median:** {0}".format(we_median))
+    # print("")
+
+    # ETH BTC
 
     price_options_test = [
-        {"name": "binance_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
-        {"name": "bitstamp_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
-        {"name": "bitfinex_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
-        {"name": "kraken_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
-        {"name": "gemini_eth", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0}
+        {"name": "binance_eth_btc", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitstamp_eth_btc", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex_eth_btc", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kraken_eth_btc", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0},
+        {"name": "gemini_eth_btc", "ponderation": 0.2, "min_volume": 0.0, "max_delay": 0}
     ]
 
     pr_engine = PriceEngines(price_options_test, app_mode='ETH')
