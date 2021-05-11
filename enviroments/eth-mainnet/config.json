@@ -5,10 +5,10 @@
   "timeout": 60,
   "timeout_request": 10,
   "gas_price": 60000000,
-  "is_simulation": false,
-  "min_prices_source": 1,
+  "is_simulation": true,
+  "min_prices_source": 2,
   "networks": {
-    "ethTestnet": {
+    "ethMainnet": {
       "app_mode": "ETH",
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.0005,
