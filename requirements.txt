@@ -3,7 +3,7 @@ timeloop
 boto3
 numpy
 requests
-moneyonchain==2.0.20
+moneyonchain==2.0.21
 tabulate
 click
 eth-brownie==1.12.2

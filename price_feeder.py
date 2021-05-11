@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.1'
+__VERSION__ = '2.0.2'
 
 
 import os
@@ -443,8 +443,8 @@ class PriceFeederJobETH(PriceFeederJobBase):
         last_price = decimal.Decimal(self.last_price)
 
         # get the price from oracle
-        #last_price_oracle = self.contract_medianizer.peek()[0]
-        last_price_oracle = self.contract_medianizer.price()
+        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
+        #last_price_oracle = self.contract_medianizer.price()
 
         # calculate the price variation from the last price from oracle
         price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
@@ -470,7 +470,7 @@ class PriceFeederJobETH(PriceFeederJobBase):
                     is_in_time))
 
         # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time):
+        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
 
             # set the precision to price
             price_to_set = price_no_precision * 10 ** 18
