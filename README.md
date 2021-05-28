@@ -133,7 +133,7 @@ Run, replace ACCOUNT_PK_SECRET  with your private key owner of the account
 docker run -d \
 --name price_feeder_1 \
 --env ACCOUNT_PK_SECRET=asdfasdfasdf \
---env APP_CONNECTION_NETWORK=rskTesnetPublic \
+--env APP_CONNECTION_NETWORK=rskTestnetPublic \
 --env APP_CONFIG_NETWORK=rdocTestnet \
 price_feeder
 ```

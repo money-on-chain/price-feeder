@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.2'
+__VERSION__ = '2.0.4'
 
 
 import os
@@ -58,6 +58,12 @@ class PriceFeederJobBase:
         # config network is our enviroment we want to connect
         network_manager.connect(connection_network=self.connection_network,
                                 config_network=self.config_network)
+
+        address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
+        address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
+
+        log.info("Starting with MoCMedianizer: {}".format(address_medianizer))
+        log.info("Starting with PriceFeed: {}".format(address_pricefeed))
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
 
