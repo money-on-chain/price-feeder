@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.4'
+__VERSION__ = '2.0.5'
 
 
 import os
@@ -53,6 +53,24 @@ class PriceFeederJobBase:
         self.options = price_f_config
         self.config_network = config_net
         self.connection_network = connection_net
+
+        # install custom network if needit
+        if self.connection_network.startswith("https") or self.connection_network.startswith("http"):
+            a_connection = self.connection_network.split(',')
+            host = a_connection[0]
+            chain_id = a_connection[1]
+
+            network_manager.add_network(
+                network_name='rskCustomNetwork',
+                network_host=host,
+                network_chainid=chain_id,
+                network_explorer='https://blockscout.com/rsk/mainnet/api',
+                force=False
+            )
+
+            self.connection_network = 'rskCustomNetwork'
+
+            log.info("Using custom network... id: {}".format(self.connection_network))
 
         # connection network is the brownie connection network
         # config network is our enviroment we want to connect

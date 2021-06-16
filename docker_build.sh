@@ -3,9 +3,9 @@
 # exit as soon as an error happen
 set -e
 
-usage() { echo "Usage: $0 -e <environment> -c <config file> -i <aws id>" 1>&2; exit 1; }
+usage() { echo "Usage: $0 -e <environment> -c <config file> " 1>&2; exit 1; }
 
-while getopts ":e:c:i:" o; do
+while getopts ":e:c:" o; do
     case "${o}" in
         e)
             e=${OPTARG}
@@ -41,10 +41,6 @@ while getopts ":e:c:i:" o; do
             c=${OPTARG}
             CONFIG_FILE=$c
             ;;
-        i)
-            i=${OPTARG}
-            AWS_ID=$i
-            ;;
         *)
             usage
             ;;
@@ -52,7 +48,7 @@ while getopts ":e:c:i:" o; do
 done
 shift $((OPTIND-1))
 
-if [ -z "${e}" ] || [ -z "${c}" ] || [ -z "${i}" ]; then
+if [ -z "${e}" ] || [ -z "${c}" ] ; then
     usage
 fi
 
@@ -60,16 +56,3 @@ fi
 docker image build -t moc_price_feeder_$ENV -f Dockerfile --build-arg CONFIG=$CONFIG_FILE .
 echo "Build done!"
 
-REGION="us-west-1"
-
-# login into aws ecr
-$(aws ecr get-login --no-include-email --region $REGION)
-
-echo "Logging to AWS done!"
-
-docker tag moc_price_feeder_$ENV:latest $AWS_ID.dkr.ecr.$REGION.amazonaws.com/moc_price_feeder_$ENV:latest
-
-docker push $AWS_ID.dkr.ecr.$REGION.amazonaws.com/moc_price_feeder_$ENV:latest
-
-
-echo "Finish!"

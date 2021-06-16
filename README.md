@@ -73,7 +73,7 @@ Install libraries
 
 **Also we need brownie installed**
 
-`pip install eth-brownie==1.12.2`
+`pip install eth-brownie==1.14.6`
 
 **Add custom RSK Network connection** 
 
@@ -138,6 +138,9 @@ docker run -d \
 price_feeder
 ```
 
+### Custom node
+
+**APP_CONNECTION_NETWORK:** https://public-node.testnet.rsk.co,31
 
 ## Security and Audits
 
