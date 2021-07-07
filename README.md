@@ -73,7 +73,7 @@ Install libraries
 
 **Also we need brownie installed**
 
-`pip install eth-brownie==1.12.2`
+`pip install eth-brownie==1.14.6`
 
 **Add custom RSK Network connection** 
 
@@ -133,12 +133,22 @@ Run, replace ACCOUNT_PK_SECRET  with your private key owner of the account
 docker run -d \
 --name price_feeder_1 \
 --env ACCOUNT_PK_SECRET=asdfasdfasdf \
+<<<<<<< HEAD
 --env APP_CONNECTION_NETWORK=rskTesnetPublic \
+=======
+--env APP_CONNECTION_NETWORK=rskTestnetPublic \
+>>>>>>> master
 --env APP_CONFIG_NETWORK=rdocTestnet \
 price_feeder
 ```
 
+### Custom node
 
+<<<<<<< HEAD
+=======
+**APP_CONNECTION_NETWORK:** https://public-node.testnet.rsk.co,31
+
+>>>>>>> master
 ## Security and Audits
 
 [Deployed Contracts](https://github.com/money-on-chain/main-RBTC-contract/blob/master/docs/Contracts%20verification.md)

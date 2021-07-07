@@ -1,9 +1,9 @@
-web3>=5.11.1
+web3==5.18.0
 timeloop
 boto3
 numpy
 requests
-moneyonchain==2.0.20
+moneyonchain==2.0.28
 tabulate
 click
-eth-brownie==1.12.2
+eth-brownie==1.14.6

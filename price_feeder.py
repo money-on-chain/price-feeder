@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.1'
+__VERSION__ = '2.0.5'
 
 
 import os
@@ -54,6 +54,7 @@ class PriceFeederJobBase:
         self.config_network = config_net
         self.connection_network = connection_net
 
+<<<<<<< HEAD
         # connection network is the brownie connection network
         # config network is our enviroment we want to connect
         network_manager.connect(connection_network=self.connection_network,
@@ -61,6 +62,39 @@ class PriceFeederJobBase:
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
 
+=======
+        # install custom network if needit
+        if self.connection_network.startswith("https") or self.connection_network.startswith("http"):
+            a_connection = self.connection_network.split(',')
+            host = a_connection[0]
+            chain_id = a_connection[1]
+
+            network_manager.add_network(
+                network_name='rskCustomNetwork',
+                network_host=host,
+                network_chainid=chain_id,
+                network_explorer='https://blockscout.com/rsk/mainnet/api',
+                force=False
+            )
+
+            self.connection_network = 'rskCustomNetwork'
+
+            log.info("Using custom network... id: {}".format(self.connection_network))
+
+        # connection network is the brownie connection network
+        # config network is our enviroment we want to connect
+        network_manager.connect(connection_network=self.connection_network,
+                                config_network=self.config_network)
+
+        address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
+        address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
+
+        log.info("Starting with MoCMedianizer: {}".format(address_medianizer))
+        log.info("Starting with PriceFeed: {}".format(address_pricefeed))
+
+        self.app_mode = self.options['networks'][self.config_network]['app_mode']
+
+>>>>>>> master
         # simulation don't write to blockchain
         self.is_simulation = False
         if 'is_simulation' in self.options:
@@ -134,6 +168,7 @@ class PriceFeederJobBase:
         except Exception as e:
             log.error(e, exc_info=True)
             self.aws_put_metric_exception(1)
+<<<<<<< HEAD
 
     def add_jobs(self):
 
@@ -164,6 +199,38 @@ class PriceFeederJobBase:
                 self.tl.stop()
                 break
 
+=======
+
+    def add_jobs(self):
+
+        # creating the alarm
+        self.aws_put_metric_exception(0)
+
+        backup_mode = False
+        if 'backup_mode' in self.options:
+            if self.options['backup_mode']:
+                backup_mode = True
+
+        if backup_mode:
+            log.info("Job Price feeder as BACKUP!")
+            self.tl._add_job(self.job_price_feed_backup, datetime.timedelta(
+                seconds=self.options['interval']))
+        else:
+            self.tl._add_job(self.job_price_feed, datetime.timedelta(
+                seconds=self.options['interval']))
+
+    def time_loop_start(self):
+
+        self.add_jobs()
+        self.tl.start()
+        while True:
+            try:
+                time.sleep(1)
+            except KeyboardInterrupt:
+                self.tl.stop()
+                break
+
+>>>>>>> master
 
 class PriceFeederJobRIF(PriceFeederJobBase):
 
@@ -443,8 +510,13 @@ class PriceFeederJobETH(PriceFeederJobBase):
         last_price = decimal.Decimal(self.last_price)
 
         # get the price from oracle
+<<<<<<< HEAD
         #last_price_oracle = self.contract_medianizer.peek()[0]
         last_price_oracle = self.contract_medianizer.price()
+=======
+        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
+        #last_price_oracle = self.contract_medianizer.price()
+>>>>>>> master
 
         # calculate the price variation from the last price from oracle
         price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
@@ -470,7 +542,11 @@ class PriceFeederJobETH(PriceFeederJobBase):
                     is_in_time))
 
         # IF is in range or not in range but is in time
+<<<<<<< HEAD
         if is_in_range or (not is_in_range and is_in_time):
+=======
+        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
+>>>>>>> master
 
             # set the precision to price
             price_to_set = price_no_precision * 10 ** 18

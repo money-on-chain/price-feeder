@@ -1,14 +1,14 @@
 {
-  "backup_mode": false,
+  "backup_mode": true,
   "backup_writes": 100,
   "interval": 30,
   "timeout": 60,
   "timeout_request": 10,
-  "gas_price": 68000000,
-  "is_simulation": false,
+  "gas_price": 650000001,
+  "is_simulation": true,
   "min_prices_source": 1,
   "networks": {
-    "ethTestnet": {
+    "ethMainnet": {
       "app_mode": "ETH",
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.0005,
@@ -19,8 +19,8 @@
         {"name": "kraken_eth_btc","ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
       ],
       "addresses": {
-        "MoCMedianizer": "0x4D4254D3744e1E4beb090ab5d8eB48096ff4aE27",
-        "PriceFeed": "0xEc2FA32050F5585dB4B15E60e1c21742b22740C4"
+        "MoCMedianizer": "0x68862C30d45605EAd8D01eF1632F7BFB18FAB587",
+        "PriceFeed": "0xe76Bd65f9C5fD95b6120532CE6a254FA0fB62208"
       }
     }
   }
