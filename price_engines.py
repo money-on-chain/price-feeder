@@ -91,6 +91,8 @@ class PriceEngines(object):
                 engines_names = engines.pairs['RIF_BTC']
             elif app_mode == 'ETH':
                 engines_names = engines.pairs['ETH_BTC']
+            elif app_mode == 'USDT':
+                engines_names = engines.pairs['BTC_USDT']
             else:
                 raise Exception("Not valid app mode")
 
@@ -297,7 +299,6 @@ if __name__ == '__main__':
     # MOC
 
     price_options_test = [
-        {"name": "binance", "ponderation": 1.25, "min_volume": 0.0, "max_delay": 0},
         {"name": "bitstamp", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
         {"name": "coinbase", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
         {"name": "bitfinex", "ponderation": 0, "min_volume": 0.0, "max_delay": 0}
@@ -364,6 +365,35 @@ if __name__ == '__main__':
     ]
 
     pr_engine = PriceEngines(price_options_test, app_mode='ETH')
+    we_prices = pr_engine.get_weighted()
+    we_median = pr_engine.get_weighted_median(we_prices)
+
+    titles = ['Name', 'Price', 'Ponderation', 'Original Ponderation']
+    display_table = []
+    for we_price in we_prices:
+        row = []
+        row.append(we_price['name'])
+        row.append(we_price['price'])
+        row.append(we_price['price_ponderation'])
+        row.append(we_price['ponderation'])
+        display_table.append(row)
+
+    print("")
+    print(tabulate(display_table, headers=titles, tablefmt="pipe"))
+    print("")
+    print("**Weighted median:** {0}".format(we_median))
+    print("")
+
+    # USDT BTC
+
+    price_options_test = [
+        {"name": "binance_usdt", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex_usdt", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kraken_usdt", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "coinbase_usdt", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
+    ]
+
+    pr_engine = PriceEngines(price_options_test, app_mode='USDT')
     we_prices = pr_engine.get_weighted()
     we_median = pr_engine.get_weighted_median(we_prices)
 
