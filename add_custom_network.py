@@ -29,7 +29,8 @@ def add_custom_network(connection_net):
                         network_name,
                         "host={}".format(host),
                         "chainid={}".format(chain_id),
-                        "explorer={}".format(network_explorer)])
+                        "explorer={}".format(network_explorer),
+                        "timeout=180"])
 
 
 if __name__ == '__main__':
