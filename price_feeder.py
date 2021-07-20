@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.5'
+__VERSION__ = '2.0.6'
 
 
 import os
@@ -53,6 +53,7 @@ class PriceFeederJobBase:
         self.options = price_f_config
         self.config_network = config_net
         self.connection_network = connection_net
+        self.last_block = 0
 
         # install custom network if needit
         if self.connection_network.startswith("https") or self.connection_network.startswith("http"):
@@ -72,18 +73,14 @@ class PriceFeederJobBase:
 
             log.info("Using custom network... id: {}".format(self.connection_network))
 
-        # connection network is the brownie connection network
-        # config network is our enviroment we want to connect
-        network_manager.connect(connection_network=self.connection_network,
-                                config_network=self.config_network)
-
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
         address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
 
+        self.app_mode = self.options['networks'][self.config_network]['app_mode']
+
         log.info("Starting with MoCMedianizer: {}".format(address_medianizer))
         log.info("Starting with PriceFeed: {}".format(address_pricefeed))
-
-        self.app_mode = self.options['networks'][self.config_network]['app_mode']
+        log.info("Starting with app_mode: {}".format(self.app_mode))
 
         # simulation don't write to blockchain
         self.is_simulation = False
@@ -106,6 +103,19 @@ class PriceFeederJobBase:
                                          log=log,
                                          app_mode=self.app_mode,
                                          min_prices=self.min_prices_source)
+
+        self.connect()
+
+    def connect(self):
+
+        # connection network is the brownie connection network
+        # config network is our enviroment we want to connect
+        network_manager.connect(connection_network=self.connection_network,
+                                config_network=self.config_network)
+
+    def init_contracts(self):
+        """ Init contracts """
+        pass
 
     @staticmethod
     def aws_put_metric_exception(value):
@@ -143,26 +153,67 @@ class PriceFeederJobBase:
         """ Post price in backup mode """
         return
 
-    def job_price_feed(self):
+    def reconnect_on_lost_chain(self):
+
+        block = network_manager.block_number
+
+        if not self.last_block:
+            self.last_block = block
+            return
+
+        if block <= self.last_block:
+            # this means no new blocks from the last call,
+            # so this means a halt node, try to reconnect.
+
+            log.error("[ERROR BLOCKCHAIN CONNECT!] Same block from the last time! going to reconnect!")
+
+            # Raise exception
+            self.aws_put_metric_exception(1)
+
+            # first disconnect
+            network_manager.disconnect()
+
+            # and then reconnect all again
+            self.connect()
+
+            # init contracts again
+            self.init_contracts()
+
+        log.info("[RECONNECT] :: Reconnect on lost chain :: OK :: Block height: {1}/{0} ".format(
+            block, self.last_block))
+
+        # save the last block
+        self.last_block = block
+
+    def run_watch_exception(self, task_function):
 
         try:
-            self.price_feed()
+            task_function()
         except Exception as e:
             log.error(e, exc_info=True)
             self.aws_put_metric_exception(1)
+
+    def job_reconnect_on_lost_chain(self):
+        """ Task reconnect when lost connection on chain """
+
+        self.run_watch_exception(self.reconnect_on_lost_chain)
+
+    def job_price_feed(self):
+
+        self.run_watch_exception(self.price_feed)
 
     def job_price_feed_backup(self):
 
-        try:
-            self.price_feed_backup()
-        except Exception as e:
-            log.error(e, exc_info=True)
-            self.aws_put_metric_exception(1)
+        self.run_watch_exception(self.price_feed_backup)
 
     def add_jobs(self):
 
         # creating the alarm
         self.aws_put_metric_exception(0)
+
+        # Reconnect on lost chain
+        log.info("Jobs add reconnect on lost chain")
+        self.tl._add_job(self.job_reconnect_on_lost_chain, datetime.timedelta(seconds=180))
 
         backup_mode = False
         if 'backup_mode' in self.options:
@@ -194,6 +245,10 @@ class PriceFeederJobRIF(PriceFeederJobBase):
     def __init__(self, price_f_config, config_net, connection_net):
 
         super().__init__(price_f_config, config_net, connection_net)
+
+        self.init_contracts()
+
+    def init_contracts(self):
 
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
         address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
@@ -321,6 +376,9 @@ class PriceFeederJobMoC(PriceFeederJobBase):
     def __init__(self, price_f_config, config_net, connection_net):
 
         super().__init__(price_f_config, config_net, connection_net)
+        self.init_contracts()
+
+    def init_contracts(self):
 
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
         address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
@@ -438,6 +496,9 @@ class PriceFeederJobETH(PriceFeederJobBase):
     def __init__(self, price_f_config, config_net, connection_net):
 
         super().__init__(price_f_config, config_net, connection_net)
+        self.init_contracts()
+
+    def init_contracts(self):
 
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
         address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
