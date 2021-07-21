@@ -5,7 +5,7 @@
   "timeout": 60,
   "timeout_request": 10,
   "gas_price": 650000001,
-  "is_simulation": true,
+  "is_simulation": false,
   "min_prices_source": 1,
   "networks": {
     "ethMainnet": {
