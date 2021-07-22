@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.7'
+__VERSION__ = '2.0.8'
 
 
 import os
@@ -44,6 +44,34 @@ logging.basicConfig(level=logging.INFO,
 
 log = logging.getLogger('default')
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
+
+
+def aws_put_metric_exception(value):
+    """ Only for AWS cloudwatch"""
+
+    if 'AWS_ACCESS_KEY_ID' not in os.environ:
+        return
+
+    # Create CloudWatch client
+    cloudwatch = boto3.client('cloudwatch')
+
+    # Put custom metrics
+    cloudwatch.put_metric_data(
+        MetricData=[
+            {
+                'MetricName': os.environ['PRICE_FEEDER_NAME'],
+                'Dimensions': [
+                    {
+                        'Name': 'PRICEFEEDER',
+                        'Value': 'Error'
+                    },
+                ],
+                'Unit': 'None',
+                'Value': value
+            },
+        ],
+        Namespace='MOC/EXCEPTIONS'
+    )
 
 
 class PriceFeederJobBase:
@@ -117,34 +145,6 @@ class PriceFeederJobBase:
         """ Init contracts """
         pass
 
-    @staticmethod
-    def aws_put_metric_exception(value):
-        """ Only for AWS cloudwatch"""
-
-        if 'AWS_ACCESS_KEY_ID' not in os.environ:
-            return
-
-        # Create CloudWatch client
-        cloudwatch = boto3.client('cloudwatch')
-
-        # Put custom metrics
-        cloudwatch.put_metric_data(
-            MetricData=[
-                {
-                    'MetricName': os.environ['PRICE_FEEDER_NAME'],
-                    'Dimensions': [
-                        {
-                            'Name': 'PRICEFEEDER',
-                            'Value': 'Error'
-                        },
-                    ],
-                    'Unit': 'None',
-                    'Value': value
-                },
-            ],
-            Namespace='MOC/EXCEPTIONS'
-        )
-
     def price_feed(self):
         """ Post price """
         return
@@ -168,7 +168,7 @@ class PriceFeederJobBase:
             log.error("[ERROR BLOCKCHAIN CONNECT!] Same block from the last time! going to reconnect!")
 
             # Raise exception
-            self.aws_put_metric_exception(1)
+            aws_put_metric_exception(1)
 
             # first disconnect
             network_manager.disconnect()
@@ -191,7 +191,7 @@ class PriceFeederJobBase:
             task_function()
         except Exception as e:
             log.error(e, exc_info=True)
-            self.aws_put_metric_exception(1)
+            aws_put_metric_exception(1)
 
     def job_reconnect_on_lost_chain(self):
         """ Task reconnect when lost connection on chain """
@@ -209,7 +209,7 @@ class PriceFeederJobBase:
     def add_jobs(self):
 
         # creating the alarm
-        self.aws_put_metric_exception(0)
+        aws_put_metric_exception(0)
 
         # Reconnect on lost chain
         log.info("Jobs add reconnect on lost chain")
@@ -290,9 +290,11 @@ class PriceFeederJobRIF(PriceFeederJobBase):
         # get the last price we insert as a feeder
         last_price = decimal.Decimal(self.last_price)
 
-        # get the price from oracle
-        #last_price_oracle = self.contract_medianizer.peek()[0]
-        last_price_oracle = self.contract_medianizer.price()
+        # get the price from oracle and validity of the same
+        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
+        if not last_price_oracle_validity:
+            log.error("CANNOT GET MEDIANIZER PRICE! ")
+            aws_put_metric_exception(1)  # Put an alarm in AWS
 
         # calculate the price variation from the last price from oracle
         price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
@@ -330,7 +332,7 @@ class PriceFeederJobRIF(PriceFeederJobBase):
                     is_in_time))
 
         # IF is in range or not in range but is in time
-        if not_under_the_floor and (is_in_range or (not is_in_range and is_in_time)):
+        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
 
             # set the precision to price
             price_to_set = price_no_precision * 10 ** 18
@@ -355,7 +357,7 @@ class PriceFeederJobRIF(PriceFeederJobBase):
 
         if not self.contract_medianizer.compute()[1] or self.backup_writes > 0:
             self.price_feed()
-            self.aws_put_metric_exception(1)
+            aws_put_metric_exception(1)
 
             if self.backup_writes <= 0:
                 if 'backup_writes' in self.options:
@@ -410,9 +412,11 @@ class PriceFeederJobMoC(PriceFeederJobBase):
         # get the last price we insert as a feeder
         last_price = decimal.Decimal(self.last_price)
 
-        # get the price from oracle
-        #last_price_oracle = self.contract_medianizer.peek()[0]
-        last_price_oracle = self.contract_medianizer.price()
+        # get the price from oracle and validity of the same
+        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
+        if not last_price_oracle_validity:
+            log.error("CANNOT GET MEDIANIZER PRICE! ")
+            aws_put_metric_exception(1)  # Put an alarm in AWS
 
         # calculate the price variation from the last price from oracle
         price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
@@ -450,8 +454,7 @@ class PriceFeederJobMoC(PriceFeederJobBase):
                     is_in_time))
 
         # IF is in range or not in range but is in time
-        if not_under_the_floor and (is_in_range or (not is_in_range and is_in_time)):
-
+        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
             # set the precision to price
             price_to_set = price_no_precision * 10 ** 18
 
@@ -475,7 +478,7 @@ class PriceFeederJobMoC(PriceFeederJobBase):
 
         if not self.contract_medianizer.compute()[1] or self.backup_writes > 0:
             self.price_feed()
-            self.aws_put_metric_exception(1)
+            aws_put_metric_exception(1)
 
             if self.backup_writes <= 0:
                 if 'backup_writes' in self.options:
@@ -529,7 +532,9 @@ class PriceFeederJobETH(PriceFeederJobBase):
 
         # get the price from oracle
         last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
-        #last_price_oracle = self.contract_medianizer.price()
+        if not last_price_oracle_validity:
+            log.error("CANNOT GET MEDIANIZER PRICE! ")
+            aws_put_metric_exception(1)  # Put an alarm in AWS
 
         # calculate the price variation from the last price from oracle
         price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
