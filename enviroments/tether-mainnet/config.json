@@ -1,0 +1,27 @@
+{
+  "backup_mode": false,
+  "backup_writes": 100,
+  "interval": 30,
+  "timeout": 60,
+  "timeout_request": 10,
+  "gas_price": 65100000,
+  "is_simulation": false,
+  "min_prices_source": 1,
+  "networks": {
+    "tetherMainnet": {
+      "app_mode": "USDT",
+      "block_expiration": 600,
+      "price_variation_write_blockchain": 0.0005,
+      "price_engines": [
+        {"name": "binance_usdt",    "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex_usdt", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kraken_usdt","ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "coinbase_usdt","ponderation": 0.25, "min_volume": 0.0, "max_delay": 0}
+      ],
+      "addresses": {
+        "MoCMedianizer": "0x5741d55C96176eEca86316b5840Cb208784d5188",
+        "PriceFeed": "0xda6BA2D0162f1C5f3E1F5722E527DB53bA24aD31"
+      }
+    }
+  }
+}
