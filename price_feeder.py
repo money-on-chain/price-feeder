@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.8'
+__VERSION__ = '2.0.9'
 
 
 import os
@@ -581,6 +581,10 @@ class PriceFeederJobETH(PriceFeederJobBase):
         return price_no_precision
 
 
+class PriceFeederJobUSDT(PriceFeederJobETH):
+    pass
+
+
 def options_from_config(filename='config.json'):
     """ Options from file config.json """
 
@@ -665,6 +669,9 @@ if __name__ == '__main__':
         price_feeder.time_loop_start()
     elif app_mode == 'ETH':
         price_feeder = PriceFeederJobETH(config, config_network, connection_network)
+        price_feeder.time_loop_start()
+    elif app_mode == 'USDT':
+        price_feeder = PriceFeederJobUSDT(config, config_network, connection_network)
         price_feeder.time_loop_start()
     else:
         raise Exception("App mode not recognize!")
