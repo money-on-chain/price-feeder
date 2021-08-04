@@ -14,7 +14,7 @@
   Martin Mulone @2020 Moneyonchain
 """
 
-__VERSION__ = '2.0.9'
+__VERSION__ = '2.0.10'
 
 
 import os
@@ -171,13 +171,15 @@ class PriceFeederJobBase:
             aws_put_metric_exception(1)
 
             # first disconnect
-            network_manager.disconnect()
+            #network_manager.disconnect()
 
             # and then reconnect all again
-            self.connect()
+            #self.connect()
 
             # init contracts again
-            self.init_contracts()
+            #self.init_contracts()
+
+            raise Exception("ERROR BLOCKCHAIN CONNECT!")
 
         log.info("[RECONNECT] :: Reconnect on lost chain :: OK :: Block height: {1}/{0} ".format(
             block, self.last_block))
@@ -196,7 +198,7 @@ class PriceFeederJobBase:
     def job_reconnect_on_lost_chain(self):
         """ Task reconnect when lost connection on chain """
 
-        self.run_watch_exception(self.reconnect_on_lost_chain)
+        self.reconnect_on_lost_chain()
 
     def job_price_feed(self):
 
