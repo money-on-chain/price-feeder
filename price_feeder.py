@@ -75,6 +75,7 @@ def aws_put_metric_exception(value):
 
 
 class PriceFeederJobBase:
+    CHECK_FLOOR = False
 
     def __init__(self, price_f_config, config_net, connection_net):
 
@@ -83,7 +84,7 @@ class PriceFeederJobBase:
         self.connection_network = connection_net
         self.last_block = 0
 
-        # install custom network if needit
+        # install custom network if needed
         if self.connection_network.startswith("https") or self.connection_network.startswith("http"):
             a_connection = self.connection_network.split(',')
             host = a_connection[0]
@@ -147,11 +148,110 @@ class PriceFeederJobBase:
 
     def price_feed(self):
         """ Post price """
-        return
+        # now
+        now = datetime.datetime.now()
+
+        # price variation accepted
+        price_variation = self.options['networks'][self.config_network][
+            'price_variation_write_blockchain']
+
+        # max time in seconds that price is valid
+        block_expiration = self.options['networks'][self.config_network][
+            'block_expiration']
+
+        # get the last price we insert as a feeder
+        last_price = decimal.Decimal(self.last_price)
+
+        # get the price from oracle and validity of the same
+        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
+        if not last_price_oracle_validity:
+            log.error("CANNOT GET MEDIANIZER PRICE! ")
+            aws_put_metric_exception(1)  # Put an alarm in AWS
+
+        # calculate the price variation from the last price from oracle
+        price_variation_accepted = decimal.Decimal(
+            price_variation) * last_price_oracle
+
+        min_price = abs(last_price_oracle - price_variation_accepted)
+        max_price = last_price_oracle + price_variation_accepted
+
+        price_no_precision = self.get_price()
+
+        if self.CHECK_FLOOR:
+            # if the price is below the floor, I don't publish it
+            price_floor = self.options['networks'][self.config_network].get(
+                'price_floor', None)
+            if price_floor is not None:
+                price_floor = str(price_floor)
+                ema = self.contract_moc_state.bitcoin_moving_average()
+                kargs = {'ema': float(ema)}
+                try:
+                    price_floor = decimal.Decimal(str(eval(price_floor, kargs)))
+                except Exception as e:
+                    raise ValueError('price_floor: {}'.format(e))
+            not_under_the_floor = not (
+                    price_floor and price_floor > price_no_precision)
+
+        # is outside the range so we need to write to blockchain
+        is_in_range = price_no_precision < min_price or price_no_precision > max_price
+
+        # is more than 5 minutes from the last write
+        is_in_time = (self.last_price_timestamp + datetime.timedelta(
+            seconds=300) < now)
+
+        log.info(
+            "[PRICE FEED] ORACLE: [{0:.6f}] MIN: [{1:.6f}] MAX: [{2:.6f}] "
+            "NEW: [{3:.6f}] IS IN RANGE: [{4}] IS IN TIME: [{5}]".format(
+                last_price_oracle,
+                min_price,
+                max_price,
+                price_no_precision,
+                is_in_range,
+                is_in_time))
+
+        # IF is in range or not in range but is in time
+        if is_in_range or (
+                not is_in_range and is_in_time) or not last_price_oracle_validity:
+            # set the precision to price
+            price_to_set = price_no_precision * 10 ** 18
+
+            # submit the value to contract
+            if not self.is_simulation:
+                self.contract_price_feed.post(price_to_set,
+                                              block_expiration=block_expiration)
+            else:
+                log.info("[PRICE FEED] SIMULATION POST! ")
+
+            # save the last price to compare
+            self.last_price = price_no_precision
+
+            # save the last timestamp to compare
+            self.last_price_timestamp = datetime.datetime.now()
+
+        return price_no_precision
+
 
     def price_feed_backup(self):
-        """ Post price in backup mode """
-        return
+        """ Post price in backup mode : Only start to work only when we don't
+        have price """
+
+        if not self.contract_medianizer.compute()[1] or self.backup_writes > 0:
+            self.price_feed()
+            aws_put_metric_exception(1)
+
+            if self.backup_writes <= 0:
+                if 'backup_writes' in self.options:
+                    self.backup_writes = self.options['backup_writes']
+                else:
+                    self.backup_writes = 100
+
+            self.backup_writes -= 1
+
+            log.error("[BACKUP MODE ACTIVATED!] WRITE REMAINING:{0}".format(
+                self.backup_writes))
+
+        else:
+            log.info("[NO BACKUP MODE ACTIVATED]")
 
     def reconnect_on_lost_chain(self):
 
@@ -243,6 +343,7 @@ class PriceFeederJobBase:
 
 
 class PriceFeederJobRIF(PriceFeederJobBase):
+    CHECK_FLOOR = True
 
     def __init__(self, price_f_config, config_net, connection_net):
 
@@ -278,104 +379,9 @@ class PriceFeederJobRIF(PriceFeederJobBase):
 
         return usd_rif_price
 
-    def price_feed(self):
-
-        # now
-        now = datetime.datetime.now()
-
-        # price variation accepted
-        price_variation = self.options['networks'][self.config_network]['price_variation_write_blockchain']
-
-        # max time in seconds that price is valid
-        block_expiration = self.options['networks'][self.config_network]['block_expiration']
-
-        # get the last price we insert as a feeder
-        last_price = decimal.Decimal(self.last_price)
-
-        # get the price from oracle and validity of the same
-        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
-        if not last_price_oracle_validity:
-            log.error("CANNOT GET MEDIANIZER PRICE! ")
-            aws_put_metric_exception(1)  # Put an alarm in AWS
-
-        # calculate the price variation from the last price from oracle
-        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
-
-        min_price = abs(last_price_oracle - price_variation_accepted)
-        max_price = last_price_oracle + price_variation_accepted
-
-        price_no_precision = self.get_price()
-
-        # if the price is below the floor, I don't publish it
-        price_floor = self.options['networks'][self.config_network].get('price_floor', None)
-        if price_floor != None:
-            price_floor = str(price_floor)
-            ema = self.contract_moc_state.bitcoin_moving_average()
-            kargs = {'ema': float(ema)}
-            try:
-                price_floor = decimal.Decimal(str(eval(price_floor, kargs)))
-            except Exception as e:
-                raise ValueError('price_floor: {}'.format(e))
-        not_under_the_floor = not(price_floor and price_floor > price_no_precision)
-
-        # is outside the range so we need to write to blockchain
-        is_in_range = price_no_precision < min_price or price_no_precision > max_price
-
-        # is more than 5 minutes from the last write
-        is_in_time = (self.last_price_timestamp + datetime.timedelta(seconds=300) < now)
-
-        log.info("[PRICE FEED] ORACLE: [{0:.6f}] MIN: [{1:.6f}] MAX: [{2:.6f}] "
-                 "NEW: [{3:.6f}] IS IN RANGE: [{4}] IS IN TIME: [{5}]".format(
-                    last_price_oracle,
-                    min_price,
-                    max_price,
-                    price_no_precision,
-                    is_in_range,
-                    is_in_time))
-
-        # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
-
-            # set the precision to price
-            price_to_set = price_no_precision * 10 ** 18
-
-            # submit the value to contract
-            if not self.is_simulation:
-                self.contract_price_feed.post(price_to_set,
-                                              block_expiration=block_expiration)
-            else:
-                log.info("[PRICE FEED] SIMULATION POST! ")
-
-            # save the last price to compare
-            self.last_price = price_no_precision
-
-            # save the last timestamp to compare
-            self.last_price_timestamp = datetime.datetime.now()
-
-        return price_no_precision
-
-    def price_feed_backup(self):
-        """ Only start to work only when we dont have price """
-
-        if not self.contract_medianizer.compute()[1] or self.backup_writes > 0:
-            self.price_feed()
-            aws_put_metric_exception(1)
-
-            if self.backup_writes <= 0:
-                if 'backup_writes' in self.options:
-                    self.backup_writes = self.options['backup_writes']
-                else:
-                    self.backup_writes = 100
-
-            self.backup_writes -= 1
-
-            log.error("[BACKUP MODE ACTIVATED!] WRITE REMAINING:{0}".format(self.backup_writes))
-
-        else:
-            log.info("[NO BACKUP MODE ACTIVATED]")
-
 
 class PriceFeederJobMoC(PriceFeederJobBase):
+    CHECK_FLOOR = True
 
     def __init__(self, price_f_config, config_net, connection_net):
 
@@ -400,100 +406,6 @@ class PriceFeederJobMoC(PriceFeederJobBase):
 
         return decimal.Decimal(self.price_source.prices_weighted_median())
 
-    def price_feed(self):
-
-        # now
-        now = datetime.datetime.now()
-
-        # price variation accepted
-        price_variation = self.options['networks'][self.config_network]['price_variation_write_blockchain']
-
-        # max time in seconds that price is valid
-        block_expiration = self.options['networks'][self.config_network]['block_expiration']
-
-        # get the last price we insert as a feeder
-        last_price = decimal.Decimal(self.last_price)
-
-        # get the price from oracle and validity of the same
-        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
-        if not last_price_oracle_validity:
-            log.error("CANNOT GET MEDIANIZER PRICE! ")
-            aws_put_metric_exception(1)  # Put an alarm in AWS
-
-        # calculate the price variation from the last price from oracle
-        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
-
-        min_price = abs(last_price_oracle - price_variation_accepted)
-        max_price = last_price_oracle + price_variation_accepted
-
-        price_no_precision = self.get_price()
-
-        # if the price is below the floor, I don't publish it
-        price_floor = self.options['networks'][self.config_network].get('price_floor', None)
-        if price_floor != None:
-            price_floor = str(price_floor)
-            ema = self.contract_moc_state.bitcoin_moving_average()
-            kargs = {'ema': float(ema)}
-            try:
-                price_floor = decimal.Decimal(str(eval(price_floor, kargs)))
-            except Exception as e:
-                raise ValueError('price_floor: {}'.format(e))
-        not_under_the_floor = not(price_floor and price_floor > price_no_precision)
-
-        # is outside the range so we need to write to blockchain
-        is_in_range = price_no_precision < min_price or price_no_precision > max_price
-
-        # is more than 5 minutes from the last write
-        is_in_time = (self.last_price_timestamp + datetime.timedelta(seconds=300) < now)
-
-        log.info("[PRICE FEED] ORACLE: [{0:.6f}] MIN: [{1:.6f}] MAX: [{2:.6f}] "
-                 "NEW: [{3:.6f}] IS IN RANGE: [{4}] IS IN TIME: [{5}]".format(
-                    last_price_oracle,
-                    min_price,
-                    max_price,
-                    price_no_precision,
-                    is_in_range,
-                    is_in_time))
-
-        # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
-            # set the precision to price
-            price_to_set = price_no_precision * 10 ** 18
-
-            # submit the value to contract
-            if not self.is_simulation:
-                self.contract_price_feed.post(price_to_set,
-                                              block_expiration=block_expiration)
-            else:
-                log.info("[PRICE FEED] SIMULATION POST! ")
-
-            # save the last price to compare
-            self.last_price = price_no_precision
-
-            # save the last timestamp to compare
-            self.last_price_timestamp = datetime.datetime.now()
-
-        return price_no_precision
-
-    def price_feed_backup(self):
-        """ Only start to work only when we dont have price """
-
-        if not self.contract_medianizer.compute()[1] or self.backup_writes > 0:
-            self.price_feed()
-            aws_put_metric_exception(1)
-
-            if self.backup_writes <= 0:
-                if 'backup_writes' in self.options:
-                    self.backup_writes = self.options['backup_writes']
-                else:
-                    self.backup_writes = 100
-
-            self.backup_writes -= 1
-
-            log.error("[BACKUP MODE ACTIVATED!] WRITE REMAINING:{0}".format(self.backup_writes))
-
-        else:
-            log.info("[NO BACKUP MODE ACTIVATED]")
 
 
 class PriceFeederJobETH(PriceFeederJobBase):
@@ -517,70 +429,6 @@ class PriceFeederJobETH(PriceFeederJobBase):
     def get_price(self):
 
         return decimal.Decimal(self.price_source.prices_weighted_median())
-
-    def price_feed(self):
-
-        # now
-        now = datetime.datetime.now()
-
-        # price variation accepted
-        price_variation = self.options['networks'][self.config_network]['price_variation_write_blockchain']
-
-        # max time in seconds that price is valid
-        block_expiration = self.options['networks'][self.config_network]['block_expiration']
-
-        # get the last price we insert as a feeder
-        last_price = decimal.Decimal(self.last_price)
-
-        # get the price from oracle
-        last_price_oracle, last_price_oracle_validity = self.contract_medianizer.peek()
-        if not last_price_oracle_validity:
-            log.error("CANNOT GET MEDIANIZER PRICE! ")
-            aws_put_metric_exception(1)  # Put an alarm in AWS
-
-        # calculate the price variation from the last price from oracle
-        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
-
-        min_price = abs(last_price_oracle - price_variation_accepted)
-        max_price = last_price_oracle + price_variation_accepted
-
-        price_no_precision = self.get_price()
-
-        # is outside the range so we need to write to blockchain
-        is_in_range = price_no_precision < min_price or price_no_precision > max_price
-
-        # is more than 5 minutes from the last write
-        is_in_time = (self.last_price_timestamp + datetime.timedelta(seconds=300) < now)
-
-        log.info("[PRICE FEED] ORACLE: [{0:.6f}] MIN: [{1:.6f}] MAX: [{2:.6f}] "
-                 "NEW: [{3:.6f}] IS IN RANGE: [{4}] IS IN TIME: [{5}]".format(
-                    last_price_oracle,
-                    min_price,
-                    max_price,
-                    price_no_precision,
-                    is_in_range,
-                    is_in_time))
-
-        # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
-
-            # set the precision to price
-            price_to_set = price_no_precision * 10 ** 18
-
-            # submit the value to contract
-            if not self.is_simulation:
-                self.contract_price_feed.post(price_to_set,
-                                              block_expiration=block_expiration)
-            else:
-                log.info("[PRICE FEED] SIMULATION POST! ")
-
-            # save the last price to compare
-            self.last_price = price_no_precision
-
-            # save the last timestamp to compare
-            self.last_price_timestamp = datetime.datetime.now()
-
-        return price_no_precision
 
 
 class PriceFeederJobUSDT(PriceFeederJobETH):
