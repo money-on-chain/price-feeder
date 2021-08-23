@@ -134,6 +134,7 @@ class PriceFeederJobBase:
                                          min_prices=self.min_prices_source)
 
         self.connect()
+        self.init_contracts()
 
     def connect(self):
 
@@ -345,12 +346,6 @@ class PriceFeederJobBase:
 class PriceFeederJobRIF(PriceFeederJobBase):
     CHECK_FLOOR = True
 
-    def __init__(self, price_f_config, config_net, connection_net):
-
-        super().__init__(price_f_config, config_net, connection_net)
-
-        self.init_contracts()
-
     def init_contracts(self):
 
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
@@ -383,11 +378,6 @@ class PriceFeederJobRIF(PriceFeederJobBase):
 class PriceFeederJobMoC(PriceFeederJobBase):
     CHECK_FLOOR = True
 
-    def __init__(self, price_f_config, config_net, connection_net):
-
-        super().__init__(price_f_config, config_net, connection_net)
-        self.init_contracts()
-
     def init_contracts(self):
 
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
@@ -409,11 +399,6 @@ class PriceFeederJobMoC(PriceFeederJobBase):
 
 
 class PriceFeederJobETH(PriceFeederJobBase):
-
-    def __init__(self, price_f_config, config_net, connection_net):
-
-        super().__init__(price_f_config, config_net, connection_net)
-        self.init_contracts()
 
     def init_contracts(self):
 
