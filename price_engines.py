@@ -299,9 +299,11 @@ if __name__ == '__main__':
     # MOC
 
     price_options_test = [
-        {"name": "bitstamp", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitstamp", "ponderation": 0.22, "min_volume": 0.0, "max_delay": 0},
+        {"name": "bitfinex", "ponderation": 0.18, "min_volume": 0.0, "max_delay": 0},
+        {"name": "kraken", "ponderation": 0.18, "min_volume": 0.0, "max_delay": 0},
         {"name": "coinbase", "ponderation": 0.25, "min_volume": 0.0, "max_delay": 0},
-        {"name": "bitfinex", "ponderation": 0, "min_volume": 0.0, "max_delay": 0}
+        {"name": "gemini", "ponderation": 0.17, "min_volume": 0.0, "max_delay": 0}
     ]
 
     pr_engine = PriceEngines(price_options_test, app_mode='MoC')
