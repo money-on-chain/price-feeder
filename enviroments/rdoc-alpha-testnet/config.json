@@ -3,17 +3,12 @@
   "backup_writes": 100,
   "interval": 30,
   "timeout": 60,
-  "timeout_request": 10,
   "gas_price": 60000000,
   "networks": {
     "rdocTestnetAlpha": {
-      "price_floor": "ema * 0.193",
       "app_mode": "RIF",
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
-      "price_engines": [
-        {"name": "binance_rif","ponderation": 1.0, "min_volume": 0.0, "max_delay": 0}
-      ],
       "addresses": {
         "MoCState": "0xB80C23576053A1a5278C1a43DC8471F432f77245",
         "MoCMedianizer": "0x2B54819531B7126bDEE2CeFDD9c5342d6c307595",

@@ -337,7 +337,7 @@ class PriceFeederTaskBase(TasksManager):
         if 'last_price_timestamp' in global_manager:
             last_price_timestamp = global_manager['last_price_timestamp']
         else:
-            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=300)
+            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=301)
 
         # read contracts
         info_contracts = self.contracts()

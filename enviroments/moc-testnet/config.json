@@ -1,26 +1,16 @@
 {
   "backup_mode": false,
   "backup_writes": 100,
-  "interval": 15,
+  "interval": 25,
   "timeout": 60,
-  "timeout_request": 10,
   "gas_price": 68000000,
-  "is_simulation": true,
-  "min_prices_source": 2,
+  "is_simulation": false,
   "gas_limit": 200000,
   "networks": {
     "mocTestnet": {
-      "price_floor": "ema * 0.265",
       "app_mode": "MoC",
       "block_expiration": 600,
-      "price_variation_write_blockchain": 0.0005,
-      "price_engines": [
-        {"name": "bitstamp", "ponderation": 0.22, "min_volume":  0.0, "max_delay": 0},
-        {"name": "bitfinex", "ponderation": 0.18, "min_volume":  0.0, "max_delay": 0},
-        {"name": "kraken", "ponderation": 0.18, "min_volume":  0.0, "max_delay": 0},
-        {"name": "coinbase", "ponderation": 0.25, "min_volume":  0.0, "max_delay": 0},
-        {"name": "gemini", "ponderation": 0.17, "min_volume":  0.0, "max_delay": 0}
-      ],
+      "price_variation_write_blockchain": 0.001,
       "addresses": {
         "MoCState": "0x0adb40132cB0ffcEf6ED81c26A1881e214100555",
         "MoCMedianizer": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4",
