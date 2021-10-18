@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.9
 
 # Autor
 LABEL maintainer='martin.mulone@moneyonchain.com'
