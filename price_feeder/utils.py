@@ -13,7 +13,7 @@ def aws_put_metric_heart_beat(value):
     cloudwatch.put_metric_data(
         MetricData=[
             {
-                'MetricName': os.environ['MOC_JOBS_NAME'],
+                'MetricName': os.environ['PRICE_FEEDER_NAME'],
                 'Dimensions': [
                     {
                         'Name': 'JOBS',
