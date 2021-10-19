@@ -2,7 +2,7 @@
   "backup_mode": false,
   "backup_writes": 100,
   "interval": 25,
-  "timeout": 60,
+  "timeout": 180,
   "gas_price": 68000000,
   "is_simulation": false,
   "gas_limit": 200000,
@@ -10,12 +10,11 @@
     "mocTestnet": {
       "app_mode": "MoC",
       "block_expiration": 600,
-      "price_variation_write_blockchain": 0.001,
+      "price_variation_write_blockchain": 0.0005,
       "addresses": {
         "MoCState": "0x0adb40132cB0ffcEf6ED81c26A1881e214100555",
         "MoCMedianizer": "0x78c892Dc5b7139d0Ec1eF513C9E28eDfAA44f2d4",
-        "PriceFeed": "0x033c1D78Fbc34178A7Ee7fa64Fa6f31fEE8f79C2",
-        "RIF_source_price_btc": ""
+        "PriceFeed": "0x033c1D78Fbc34178A7Ee7fa64Fa6f31fEE8f79C2"
       }
     }
   }

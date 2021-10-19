@@ -1,26 +1,20 @@
 {
   "backup_mode": false,
   "backup_writes": 100,
-  "interval": 30,
-  "timeout": 60,
-  "timeout_request": 10,
-  "gas_price": 60000000,
+  "interval": 25,
+  "timeout": 180,
+  "gas_price": 68000000,
   "is_simulation": false,
-  "min_prices_source": 1,
+  "gas_limit": 200000,
   "networks": {
     "rdocMainnet": {
-      "price_floor": "ema * 0.193",
       "app_mode": "RIF",
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
-      "price_engines": [
-        {"name": "binance_rif","ponderation": 1.0, "min_volume": 0.0, "max_delay": 0}
-      ],
       "addresses": {
         "MoCState": "0x541F68a796Fe5ae3A381d2Aa5a50b975632e40A6",
         "MoCMedianizer": "0x504EfCadFB020d6bBaeC8a5c5BB21453719d0E00",
-        "PriceFeed": "0x461750b4824b14c3d9b7702bC6fBB82469082b23",
-        "RIF_source_price_btc": "0x7B19bb8e6c5188eC483b784d6fB5d807a77b21bF"
+        "PriceFeed": "0x461750b4824b14c3d9b7702bC6fBB82469082b23"
       }
     }
   }
