@@ -10,7 +10,7 @@ from moneyonchain.medianizer import MoCMedianizer, PriceFeed, RDOCMoCMedianizer,
     ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed
 from moneyonchain.transaction import receipt_to_log
 
-from moc_prices_source import weighted_median, get_price, BTC_USD, RIF_USD, ETH_USD, USDT_USD
+from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_USD, USDT_USD
 
 from .tasks_manager import TasksManager
 from .logger import log
@@ -322,6 +322,8 @@ class PriceFeederTaskBase(TasksManager):
 
     def task_price_feed(self, task=None, global_manager=None):
 
+        result = dict()
+
         # now
         now = datetime.datetime.now()
 
@@ -376,7 +378,7 @@ class PriceFeederTaskBase(TasksManager):
 
             # submit the value to contract
             if not self.is_simulation:
-                self.post_price(price_no_precision, info_contracts, task=task)
+                result = self.post_price(price_no_precision, info_contracts, task=task)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
@@ -386,10 +388,15 @@ class PriceFeederTaskBase(TasksManager):
             # save the last timestamp to compare
             global_manager['last_price_timestamp'] = datetime.datetime.now()
 
-        return price_no_precision
+        if result:
+            return result
+        else:
+            return save_pending_tx_receipt(None, task.task_name)
 
     def task_price_feed_backup(self, task=None, global_manager=None):
         """ Only start to work only when we dont have price """
+
+        result = dict()
 
         # get the last price we insert as a feeder
         if 'backup_writes' in global_manager:
@@ -402,7 +409,7 @@ class PriceFeederTaskBase(TasksManager):
 
         if not info_contracts['medianizer'].compute()[1] or backup_writes > 0:
 
-            self.task_price_feed(task=task, global_manager=global_manager)
+            result = self.task_price_feed(task=task, global_manager=global_manager)
 
             aws_put_metric_heart_beat(1)
 
@@ -422,6 +429,11 @@ class PriceFeederTaskBase(TasksManager):
 
         # Save backup writes to later use
         global_manager['backup_writes'] = backup_writes
+
+        if result:
+            return result
+        else:
+            return save_pending_tx_receipt(None, task.task_name)
 
     def schedule_tasks(self):
 
@@ -493,6 +505,8 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
 
     def task_price_feed(self, task=None, global_manager=None):
 
+        result = dict()
+
         # now
         now = datetime.datetime.now()
 
@@ -536,7 +550,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                 task.task_name,
                 price_no_precision,
                 price_floor))
-            return
+            return save_pending_tx_receipt(None, task.task_name)
 
         # is outside the range so we need to write to blockchain
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
@@ -545,20 +559,21 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         is_in_time = (last_price_timestamp + datetime.timedelta(seconds=300) < now)
 
         log.info("Task :: {0} :: Oracle: [{1:.2f}] Last: [{2:.2f}] "
-                 "New: [{3:.2f}] Is in range: [{4}] Is in time: [{5}]".format(
+                 "New: [{3:.2f}] Is in range: [{4}] Is in time: [{5}] Floor: [{6}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
             price_no_precision,
             is_in_range,
-            is_in_time))
+            is_in_time,
+            price_floor))
 
         # IF is in range or not in range but is in time
         if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
 
             # submit the value to contract
             if not self.is_simulation:
-                self.post_price(price_no_precision, info_contracts, task=task)
+                result = self.post_price(price_no_precision, info_contracts, task=task)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
@@ -568,7 +583,10 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
             # save the last timestamp to compare
             global_manager['last_price_timestamp'] = datetime.datetime.now()
 
-        return price_no_precision
+        if result:
+            return result
+        else:
+            return save_pending_tx_receipt(None, task.task_name)
 
 
 class PriceFeederTaskETH(PriceFeederTaskBase):
