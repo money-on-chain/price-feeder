@@ -1,5 +1,13 @@
 # Changelog
 
+## [v2.1.0] - 2021-10-19
+
+### Added & Changed
+
+- Refactor task manager
+- Now using moc price source
+
+
 ## [v2.0.9] - 2021-07-23
 
 ### Added & Changed
