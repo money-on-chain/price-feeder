@@ -364,8 +364,8 @@ class PriceFeederTaskBase(TasksManager):
         # is more than 5 minutes from the last write
         is_in_time = (last_price_timestamp + datetime.timedelta(seconds=300) < now)
 
-        log.info("Task :: {0} :: Oracle: [{1:.2f}] Last: [{2:.2f}] "
-                 "New: [{3:.2f}] Is in range: [{4}] Is in time: [{5}]".format(
+        log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
+                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
@@ -558,8 +558,8 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # is more than 5 minutes from the last write
         is_in_time = (last_price_timestamp + datetime.timedelta(seconds=300) < now)
 
-        log.info("Task :: {0} :: Oracle: [{1:.2f}] Last: [{2:.2f}] "
-                 "New: [{3:.2f}] Is in range: [{4}] Is in time: [{5}] Floor: [{6}]".format(
+        log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
+                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Floor: [{6}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
