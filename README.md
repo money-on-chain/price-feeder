@@ -1,4 +1,4 @@
-This is the job app that feed contract (price feeder) with price BTC-USD | RIF-USD | ETH-USD | USDT-USD
+This is the job app that feed contract (price feeder) with price BTC-USD | RIF-USD | ETH-BTC | USDT-USD
 
 # Money on Chain - Price Feeder
 
@@ -42,6 +42,11 @@ be considered valid.
 This is an job app that run on background, getting the price from
 different sources ponderate the final price and saving to **price feeder
 contract**.
+
+
+## Price sources
+
+Prices from exchanges, take a look to [Prices source](https://github.com/money-on-chain/moc_prices_source)
 
 
 ## Creation of price feeder
