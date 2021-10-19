@@ -23,6 +23,9 @@ __VERSION__ = '2.1.0'
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
 
 
+MAX_PENDING_BLOCK_TIME = 180  # in seconds
+
+
 def pending_queue_is_full(account_index=0):
 
     # get first account
@@ -330,6 +333,11 @@ class PriceFeederTaskBase(TasksManager):
         # price variation accepted
         price_variation = self.options['networks'][self.config_network]['price_variation_write_blockchain']
 
+        # max time in seconds that price is valid
+        block_expiration = self.options['networks'][self.config_network]['block_expiration']
+
+        timeout_in_time = abs(block_expiration - MAX_PENDING_BLOCK_TIME)
+
         # get the last price we insert as a feeder
         if 'last_price' in global_manager:
             last_price = decimal.Decimal(global_manager['last_price'])
@@ -339,7 +347,7 @@ class PriceFeederTaskBase(TasksManager):
         if 'last_price_timestamp' in global_manager:
             last_price_timestamp = global_manager['last_price_timestamp']
         else:
-            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=301)
+            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=timeout_in_time + 1)
 
         # read contracts
         info_contracts = self.contracts()
@@ -362,16 +370,19 @@ class PriceFeederTaskBase(TasksManager):
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
 
         # is more than 5 minutes from the last write
-        is_in_time = (last_price_timestamp + datetime.timedelta(seconds=300) < now)
+        is_in_time = (last_price_timestamp + datetime.timedelta(seconds=timeout_in_time) < now)
+
+        td_delta = now - last_price_timestamp
 
         log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
-                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}]".format(
+                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Last write ago: [{6}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
             price_no_precision,
             is_in_range,
-            is_in_time))
+            is_in_time,
+            td_delta.seconds))
 
         # IF is in range or not in range but is in time
         if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
@@ -513,6 +524,11 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # price variation accepted
         price_variation = self.options['networks'][self.config_network]['price_variation_write_blockchain']
 
+        # max time in seconds that price is valid
+        block_expiration = self.options['networks'][self.config_network]['block_expiration']
+
+        timeout_in_time = abs(block_expiration - MAX_PENDING_BLOCK_TIME)
+
         # get the last price we insert as a feeder
         if 'last_price' in global_manager:
             last_price = decimal.Decimal(global_manager['last_price'])
@@ -522,7 +538,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         if 'last_price_timestamp' in global_manager:
             last_price_timestamp = global_manager['last_price_timestamp']
         else:
-            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=300)
+            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=timeout_in_time + 1)
 
         # read contracts
         info_contracts = self.contracts()
@@ -555,18 +571,21 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # is outside the range so we need to write to blockchain
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
 
+        td_delta = now - last_price_timestamp
+
         # is more than 5 minutes from the last write
-        is_in_time = (last_price_timestamp + datetime.timedelta(seconds=300) < now)
+        is_in_time = (last_price_timestamp + datetime.timedelta(seconds=timeout_in_time) < now)
 
         log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
-                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Floor: [{6}]".format(
+                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Floor: [{6:.6}] Last write ago: [{7}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
             price_no_precision,
             is_in_range,
             is_in_time,
-            price_floor))
+            price_floor,
+            td_delta.seconds))
 
         # IF is in range or not in range but is in time
         if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
