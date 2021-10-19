@@ -29,11 +29,11 @@ ARG CONFIG=config.json
 
 WORKDIR /home/www-data/app/price_feeder/
 COPY add_custom_network.sh ./
-COPY engines/*.py ./engines/
-COPY price_feeder.py ./
-COPY price_engines.py ./
+COPY app_run_price_feeder.py ./
 ADD $CONFIG ./config.json
+COPY config_parser.py ./
+COPY price_feeder/ ./price_feeder/
+ENV AWS_DEFAULT_REGION=us-west-1
 ENV PATH "$PATH:/home/www-data/app/price_feeder/"
 ENV PYTHONPATH "${PYTONPATH}:/home/www-data/app/price_feeder/"
-#CMD ["python", "./price_feeder.py"]
-CMD /bin/bash -c 'bash ./add_custom_network.sh; python ./price_feeder.py'
+CMD /bin/bash -c 'bash ./add_custom_network.sh; python ./app_run_price_feeder.py'
