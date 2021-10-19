@@ -559,7 +559,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
 
         # if the price is below the floor, I don't publish it
         ema = info_contracts['moc_state'].bitcoin_moving_average()
-        price_floor = decimal.Decimal(ema * 0.193)
+        price_floor = ema * decimal.Decimal(0.193)
         under_the_floor = price_floor and price_floor > price_no_precision
         if under_the_floor:
             log.error("Task :: {0} :: Price under the floor!. Price: {1} Price Floor: {2} ".format(
