@@ -1,9 +1,5 @@
-web3==5.18.0
-timeloop
 boto3
-numpy
-requests
-moneyonchain==2.0.28
+moneyonchain==2.1.7
 tabulate
-click
-eth-brownie==1.14.6
+pebble
+moneyonchain-prices-source==0.5.1

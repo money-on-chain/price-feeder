@@ -1,4 +1,4 @@
-This is the job app that feed contract (price feeder) with price BTC-USD | RIF-USD | ETH-USD
+This is the job app that feed contract (price feeder) with price BTC-USD | RIF-USD | ETH-BTC | USDT-USD
 
 # Money on Chain - Price Feeder
 
@@ -44,6 +44,11 @@ different sources ponderate the final price and saving to **price feeder
 contract**.
 
 
+## Price sources
+
+Prices from exchanges, take a look to [Prices source](https://github.com/money-on-chain/moc_prices_source)
+
+
 ## Creation of price feeder
 
 First we need that the owner of the Oracle create a price feeder, this
@@ -73,7 +78,7 @@ Install libraries
 
 **Also we need brownie installed**
 
-`pip install eth-brownie==1.14.6`
+`pip install eth-brownie==1.17.0`
 
 **Add custom RSK Network connection** 
 
@@ -96,19 +101,13 @@ console> brownie networks add RskNetwork rskMainnetLocal host=http://localhost:4
 | rskMainnetLocal   | RSK Mainnet Local     | http://localhost:4444              | 30       |
 
 
-**Usage Test**
-
-To test price ponderation:
-
-`python price_test.py`
-
 **Usage Job**
 
 There are many networks already preconfigurated see enviroments/ folder.
 
 `export ACCOUNT_PK_SECRET=(Your PK)`
 
-`python price_feeder.py --connection_network=rskTestnetPublic --config_network=mocTestnet --config ./enviroments/moc-testnet/config.json`
+`python app_run_price_feeder.py --connection_network=rskTestnetPublic --config_network=mocTestnet --config ./enviroments/moc-testnet/config.json`
 
 **Note:** Replace (Your PK) with your private key owner of the account.
 
