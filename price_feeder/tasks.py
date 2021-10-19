@@ -10,7 +10,7 @@ from moneyonchain.medianizer import MoCMedianizer, PriceFeed, RDOCMoCMedianizer,
     ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed
 from moneyonchain.transaction import receipt_to_log
 
-from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_USD, USDT_USD
+from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD
 
 from .tasks_manager import TasksManager
 from .logger import log
@@ -203,7 +203,7 @@ class PriceFeederTaskBase(TasksManager):
         elif self.app_mode == 'RIF':
             return RIF_USD
         elif self.app_mode == 'ETH':
-            return ETH_USD
+            return ETH_BTC
         elif self.app_mode == 'USDT':
             return USDT_USD
         else:
