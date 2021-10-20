@@ -1,6 +1,6 @@
 import datetime
 
-from web3 import Web3
+from web3 import Web3, exceptions
 import decimal
 from tabulate import tabulate
 
@@ -73,7 +73,7 @@ def pending_transaction_receipt(task):
 
         try:
             tx_rcp = chain.get_transaction(task.tx_receipt)
-        except web3.exceptions.TransactionNotFound:
+        except exceptions.TransactionNotFound:
             # Transaction not exist anymore, blockchain reorder?
             # timeout and permit to send again transaction
             result['receipt']['id'] = None
