@@ -120,7 +120,7 @@ There are many networks already preconfigurated see enviroments/ folder.
 
 ### Docker (Recommended)
 
-Build, change path to correct enviroment
+Build, change path to correct environment
 
 ```
 docker build -t price_feeder -f Dockerfile --build-arg CONFIG=./enviroments/rdoc-testnet/config.json .
