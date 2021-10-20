@@ -36,8 +36,9 @@ def pending_queue_is_full(account_index=0):
 
     # A limit of pending on blockchain
     if nonce >= last_used_nonce + 1:
-        log.info('Cannot create more transactions for {} as the node queue will be full [{}, {}]'.format(
-            account_address, nonce, last_used_nonce))
+        log.info('Cannot create more transactions for {} as the node queue will be full. Nonce: [{}] '
+                 'Last used Nonce: [{}]'.format(
+                  account_address, nonce, last_used_nonce))
         return True
 
     return False
@@ -69,7 +70,20 @@ def pending_transaction_receipt(task):
     if task.tx_receipt:
         result['receipt'] = dict()
         result['receipt']['confirmed'] = False
-        tx_rcp = chain.get_transaction(task.tx_receipt)
+
+        try:
+            tx_rcp = chain.get_transaction(task.tx_receipt)
+        except web3.exceptions.TransactionNotFound:
+            # Transaction not exist anymore, blockchain reorder?
+            # timeout and permit to send again transaction
+            result['receipt']['id'] = None
+            result['receipt']['timestamp'] = None
+            result['receipt']['confirmed'] = True
+
+            log.error("Task :: {0} :: Transaction not found! {1}".format(task.task_name, task.tx_receipt))
+
+            return result
+
         # pending state
         if tx_rcp.confirmations < 1 and tx_rcp.status < 0:
             elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
