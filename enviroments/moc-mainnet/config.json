@@ -10,7 +10,7 @@
     "mocMainnet2": {
       "app_mode": "MoC",
       "block_expiration": 600,
-      "price_variation_write_blockchain": 0.0005,
+      "price_variation_write_blockchain": 0.001,
       "addresses": {
         "MoCState": "0xb9C42EFc8ec54490a37cA91c423F7285Fa01e257",
         "MoCMedianizer": "0x7B19bb8e6c5188eC483b784d6fB5d807a77b21bF",

@@ -10,7 +10,7 @@
     "ethTestnet": {
       "app_mode": "ETH",
       "block_expiration": 600,
-      "price_variation_write_blockchain": 0.0005,
+      "price_variation_write_blockchain": 0.001,
       "addresses": {
         "MoCMedianizer": "0x4D4254D3744e1E4beb090ab5d8eB48096ff4aE27",
         "PriceFeed": "0xEc2FA32050F5585dB4B15E60e1c21742b22740C4"

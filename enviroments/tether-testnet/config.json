@@ -10,7 +10,7 @@
     "tetherTestnet": {
       "app_mode": "USDT",
       "block_expiration": 600,
-      "price_variation_write_blockchain": 0.0005,
+      "price_variation_write_blockchain": 0.002,
       "addresses": {
         "MoCMedianizer": "0xB4A44672b55d66fAFA23b4F9Ba28c9C55F76fbfB",
         "PriceFeed": "0x15c7cF2c90695176dadB6c19bE34a2588Bd4eA53"
