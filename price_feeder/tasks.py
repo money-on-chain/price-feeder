@@ -17,7 +17,7 @@ from .logger import log
 from .utils import aws_put_metric_heart_beat
 
 
-__VERSION__ = '2.1.1'
+__VERSION__ = '2.1.4'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -163,6 +163,11 @@ class PriceFeederTaskBase(TasksManager):
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
 
+        try:
+            self.min_prices_source = self.options['networks'][self.config_network]['min_prices_source']
+        except KeyError:
+            self.min_prices_source = 1
+
         # install custom network if needit
         if self.connection_network.startswith("https") or self.connection_network.startswith("http"):
 
@@ -290,8 +295,26 @@ class PriceFeederTaskBase(TasksManager):
     def price_from_sources(self):
 
         d = {}
-        result = get_price(self.coinpair(), detail=d)
-        self.log_info_from_sources(d)
+        try:
+            result = get_price(self.coinpair(), detail=d)
+            self.log_info_from_sources(d)
+
+            prices_source_count = 0
+            for e in d['prices']:
+                if e['ok']:
+                    prices_source_count += 1
+                else:
+                    coinpair = e['coinpair']
+                    exchange = e['description']
+                    error = e['error']
+                    log.warning(f'{exchange} {coinpair} {error}')
+
+            if not result or prices_source_count < self.min_prices_source:
+                raise Exception(f"At least we need {self.min_prices_source} price sources.")
+
+        except Exception as e:
+            log.error(e, exc_info=True)
+            result = None
 
         return result
 
@@ -369,6 +392,7 @@ class PriceFeederTaskBase(TasksManager):
         # get the price from oracle and validity of the same
         last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
         if not last_price_oracle_validity:
+            # cannot contact medianizer but we continue to put price
             log.error("Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
 
@@ -379,6 +403,12 @@ class PriceFeederTaskBase(TasksManager):
         max_price = last_price_oracle + price_variation_accepted
 
         price_no_precision = self.price_from_sources()
+
+        if not price_no_precision:
+            # when no price finish task and put an alarm
+            log.error("Task :: {0} :: No price source!.".format(task.task_name))
+            aws_put_metric_heart_beat(1)  # Put an alarm in AWS
+            return result
 
         # is outside the range so we need to write to blockchain
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
@@ -460,6 +490,45 @@ class PriceFeederTaskBase(TasksManager):
         else:
             return save_pending_tx_receipt(None, task.task_name)
 
+    def task_contract_oracle_poke(self, task=None, global_manager=None):
+
+        # Not call until tx confirmated!
+        pending_tx_receipt = pending_transaction_receipt(task)
+        if 'receipt' in pending_tx_receipt:
+            if not pending_tx_receipt['receipt']['confirmed']:
+                log.info("Task :: {0} :: Pending tx state ...".format(task.task_name))
+                return pending_tx_receipt
+
+        # set the maximum gas limit
+        gas_limit = self.options['gas_limit']
+
+        # read contracts
+        info_contracts = self.contracts()
+
+        price_validity = info_contracts['medianizer'].peek()[1]
+        if not info_contracts['medianizer'].compute()[1] and price_validity:
+
+            if pending_queue_is_full():
+                log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
+                aws_put_metric_heart_beat(1)
+                return
+
+            tx_args = info_contracts['medianizer'].tx_arguments(gas_limit=gas_limit, required_confs=0)
+
+            tx_receipt = info_contracts['medianizer'].sc.poke(tx_args)
+            log.error("Task :: {0} :: Not valid price! Disabling Price!".format(task.task_name))
+            aws_put_metric_heart_beat(1)
+
+            return save_pending_tx_receipt(tx_receipt, task.task_name)
+
+        # if no valid price in oracle please send alarm
+        if not price_validity:
+            log.error("Task :: {0} :: No valid price in oracle!".format(task.task_name))
+            aws_put_metric_heart_beat(1)
+
+        log.info("Task :: {0} :: No!".format(task.task_name))
+        return save_pending_tx_receipt(None, task.task_name)
+
     def schedule_tasks(self):
 
         log.info("Starting adding jobs...")
@@ -471,7 +540,7 @@ class PriceFeederTaskBase(TasksManager):
         self.max_workers = 1
 
         # Reconnect on lost chain
-        log.info("Jobs add: 99. Reconnect on lost chain")
+        log.info("Job add: 99. Reconnect on lost chain")
         self.add_task(task_reconnect_on_lost_chain, args=[], wait=180, timeout=180)
 
         backup_mode = False
@@ -493,6 +562,15 @@ class PriceFeederTaskBase(TasksManager):
                           wait=self.options['interval'],
                           timeout=180,
                           task_name='1. Price Feeder')
+
+        # oracle poke disable price when something happend on source exchanges
+        # prefered to disabled price validity
+        log.info("Job add: 3. Oracle Poke [disable price]")
+        self.add_task(self.task_contract_oracle_poke,
+                      args=[],
+                      wait=60,
+                      timeout=180,
+                      task_name='3. Oracle Poke [disable price]')
 
         # Set max workers
         self.max_tasks = len(self.tasks)
@@ -560,6 +638,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # get the price from oracle and validity of the same
         last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
         if not last_price_oracle_validity:
+            # cannot contact medianizer but we continue to put price
             log.error("Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
 
@@ -571,6 +650,12 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
 
         price_no_precision = self.price_from_sources()
 
+        if not price_no_precision:
+            # when no price finish task and put an alarm
+            log.error("Task :: {0} :: No price source!.".format(task.task_name))
+            aws_put_metric_heart_beat(1)  # Put an alarm in AWS
+            return result
+
         # if the price is below the floor, I don't publish it
         ema = info_contracts['moc_state'].bitcoin_moving_average()
         price_floor = ema * decimal.Decimal(0.193)
@@ -580,7 +665,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                 task.task_name,
                 price_no_precision,
                 price_floor))
-            return save_pending_tx_receipt(None, task.task_name)
+            return result
 
         # is outside the range so we need to write to blockchain
         is_in_range = price_no_precision < min_price or price_no_precision > max_price

@@ -11,6 +11,7 @@
       "app_mode": "ETH",
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
+      "min_prices_source": 1,
       "addresses": {
         "MoCMedianizer": "0x4D4254D3744e1E4beb090ab5d8eB48096ff4aE27",
         "PriceFeed": "0x58D462F575887a18dEbD0BB926845F997419cB27"

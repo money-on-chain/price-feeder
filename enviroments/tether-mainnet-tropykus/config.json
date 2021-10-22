@@ -11,6 +11,7 @@
       "app_mode": "USDT",
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.002,
+      "min_prices_source": 1,
       "addresses": {
         "MoCMedianizer": "0x5741d55C96176eEca86316b5840Cb208784d5188",
         "PriceFeed": ""
