@@ -66,10 +66,13 @@ def save_pending_tx_receipt(tx_receipt, task_name):
 def pending_transaction_receipt(task):
     """ Wait to pending receipt get confirmed"""
 
+    timeout_reverted = 600
+
     result = dict()
     if task.tx_receipt:
         result['receipt'] = dict()
         result['receipt']['confirmed'] = False
+        result['receipt']['reverted'] = False
 
         try:
             tx_rcp = chain.get_transaction(task.tx_receipt)
@@ -85,7 +88,42 @@ def pending_transaction_receipt(task):
             return result
 
         # pending state
-        if tx_rcp.confirmations < 1 and tx_rcp.status < 0:
+        # Status:
+        #    Dropped = -2
+        #    Pending = -1
+        #    Reverted = 0
+        #    Confirmed = 1
+
+        # confirmed state
+        if tx_rcp.confirmations >= 1 and tx_rcp.status == 1:
+
+            result['receipt']['confirmed'] = True
+            result['receipt']['id'] = None
+            result['receipt']['timestamp'] = None
+
+            log.info("Task :: {0} :: Confirmed tx! [{1}]".format(task.task_name, task.tx_receipt))
+
+        # reverted
+        elif tx_rcp.confirmations >= 1 and tx_rcp.status == 0:
+
+            result['receipt']['confirmed'] = True
+            result['receipt']['reverted'] = True
+
+            elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
+            timeout = datetime.timedelta(seconds=timeout_reverted)
+
+            log.error("Task :: {0} :: Reverted tx! [{1}] Elapsed: [{2}] Timeout: [{3}]".format(
+                task.task_name, task.tx_receipt, elapsed.seconds, timeout_reverted))
+
+            if elapsed > timeout:
+                # timeout allow to send again transaction on reverted
+                result['receipt']['id'] = None
+                result['receipt']['timestamp'] = None
+                result['receipt']['confirmed'] = True
+
+                log.error("Task :: {0} :: Timeout Reverted tx! [{1}]".format(task.task_name, task.tx_receipt))
+
+        elif tx_rcp.confirmations < 1 and tx_rcp.status < 0:
             elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
             timeout = datetime.timedelta(seconds=task.timeout)
 
@@ -94,19 +132,10 @@ def pending_transaction_receipt(task):
                 result['receipt']['id'] = None
                 result['receipt']['timestamp'] = None
                 result['receipt']['confirmed'] = True
-        else:
-            # confirmed state
-            result['receipt']['confirmed'] = True
-            result['receipt']['id'] = None
-            result['receipt']['timestamp'] = None
 
-            log.info("Task :: {0} :: Confirmed tx!".format(task.task_name))
-
-            try:
-                tx_rcp.info()
-                receipt_to_log(tx_rcp, log)
-            except:
-                log.error("Task :: {0} :: Error getting info receipt!".format(task.task_name))
+                log.error("Task :: {0} :: Timeout tx! [{1}]".format(task.task_name, task.tx_receipt))
+            else:
+                log.info("Task :: {0} :: Pending tx state ... [{1}]".format(task.task_name, task.tx_receipt))
 
     return result
 
@@ -323,8 +352,8 @@ class PriceFeederTaskBase(TasksManager):
         # Not call until tx confirmated!
         pending_tx_receipt = pending_transaction_receipt(task)
         if 'receipt' in pending_tx_receipt:
-            if not pending_tx_receipt['receipt']['confirmed']:
-                log.info("Task :: {0} :: Pending tx state ...".format(task.task_name))
+            if not pending_tx_receipt['receipt']['confirmed'] or pending_tx_receipt['receipt']['reverted']:
+                # Continue on pending status or reverted
                 return pending_tx_receipt
 
         if pending_queue_is_full():
@@ -350,6 +379,17 @@ class PriceFeederTaskBase(TasksManager):
 
         # set the precision to price
         price_to_set = price_no_precision * 10 ** 18
+
+        # check estimate gas is greater than gas limit
+        estimate_gas = info_contracts['price_feed'].sc.post.estimate_gas(
+            int(price_to_set),
+            int(expiration),
+            Web3.toChecksumAddress(address_medianizer),
+            tx_args)
+        if estimate_gas > gas_limit:
+            log.error("Task :: {0} :: Estimate gas is > to gas limit. No send tx".format(task.task_name))
+            aws_put_metric_heart_beat(1)
+            return
 
         # send transaction to the price feeder
         tx_receipt = info_contracts['price_feed'].sc.post(
@@ -495,8 +535,8 @@ class PriceFeederTaskBase(TasksManager):
         # Not call until tx confirmated!
         pending_tx_receipt = pending_transaction_receipt(task)
         if 'receipt' in pending_tx_receipt:
-            if not pending_tx_receipt['receipt']['confirmed']:
-                log.info("Task :: {0} :: Pending tx state ...".format(task.task_name))
+            if not pending_tx_receipt['receipt']['confirmed'] or pending_tx_receipt['receipt']['reverted']:
+                # Continue on pending status or reverted
                 return pending_tx_receipt
 
         # set the maximum gas limit
@@ -514,6 +554,13 @@ class PriceFeederTaskBase(TasksManager):
                 return
 
             tx_args = info_contracts['medianizer'].tx_arguments(gas_limit=gas_limit, required_confs=0)
+
+            # check estimate gas is greater than gas limit
+            estimate_gas = info_contracts['medianizer'].sc.poke.estimate_gas(tx_args)
+            if estimate_gas > gas_limit:
+                log.error("Task :: {0} :: Estimate gas is > to gas limit. No send tx".format(task.task_name))
+                aws_put_metric_heart_beat(1)
+                return
 
             tx_receipt = info_contracts['medianizer'].sc.poke(tx_args)
             log.error("Task :: {0} :: Not valid price! Disabling Price!".format(task.task_name))
