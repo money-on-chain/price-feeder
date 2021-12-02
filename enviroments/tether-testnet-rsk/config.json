@@ -1,0 +1,21 @@
+{
+  "backup_mode": false,
+  "backup_writes": 100,
+  "interval": 25,
+  "timeout": 180,
+  "gas_price": 66000000,
+  "is_simulation": false,
+  "gas_limit": 200000,
+  "networks": {
+    "tetherTestnet": {
+      "app_mode": "USDT",
+      "block_expiration": 600,
+      "price_variation_write_blockchain": 0.002,
+      "min_prices_source": 1,
+      "addresses": {
+        "MoCMedianizer": "0xB4A44672b55d66fAFA23b4F9Ba28c9C55F76fbfB",
+        "PriceFeed": "0x157D53a2ecB44D190E5199670cd34C5c513b72Ec"
+      }
+    }
+  }
+}
