@@ -14,7 +14,7 @@
       "min_prices_source": 1,
       "addresses": {
         "MoCMedianizer": "0xB4A44672b55d66fAFA23b4F9Ba28c9C55F76fbfB",
-        "PriceFeed": "0x157D53a2ecB44D190E5199670cd34C5c513b72Ec"
+        "PriceFeed": "0xD942e57ECc9C016025ee30CE4acF302379Da215C"
       }
     }
   }
