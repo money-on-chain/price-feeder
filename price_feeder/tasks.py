@@ -7,17 +7,17 @@ from tabulate import tabulate
 from moneyonchain.networks import network_manager, web3, chain
 from moneyonchain.rdoc import RDOCMoCState
 from moneyonchain.medianizer import MoCMedianizer, PriceFeed, RDOCMoCMedianizer, RDOCPriceFeed, \
-    ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed
+    ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed, BNBMoCMedianizer, BNBPriceFeed
 from moneyonchain.transaction import receipt_to_log
 
-from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD
+from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD, BNB_USDT
 
 from .tasks_manager import TasksManager
 from .logger import log
 from .utils import aws_put_metric_heart_beat
 
 
-__VERSION__ = '2.1.5'
+__VERSION__ = '2.1.8'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -257,6 +257,8 @@ class PriceFeederTaskBase(TasksManager):
             return ETH_BTC
         elif self.app_mode == 'USDT':
             return USDT_USD
+        elif self.app_mode == 'BNB':
+            return BNB_USDT
         else:
             raise Exception("App mode not recognize!")
 
@@ -290,6 +292,12 @@ class PriceFeederTaskBase(TasksManager):
             contract_price_feed = USDTPriceFeed(network_manager,
                                                 contract_address=address_pricefeed,
                                                 contract_address_moc_medianizer=address_medianizer).from_abi()
+        elif self.app_mode == 'BNB':
+            contract_medianizer = BNBMoCMedianizer(network_manager,
+                                                   contract_address=address_medianizer).from_abi()
+            contract_price_feed = BNBPriceFeed(network_manager,
+                                               contract_address=address_pricefeed,
+                                               contract_address_moc_medianizer=address_medianizer).from_abi()
         else:
             raise Exception("App mode not recognize!")
 
@@ -762,6 +770,13 @@ class PriceFeederTaskETH(PriceFeederTaskBase):
 
 
 class PriceFeederTaskUSDT(PriceFeederTaskBase):
+
+    def __init__(self, price_f_config, config_net, connection_net):
+
+        super().__init__(price_f_config, config_net, connection_net)
+
+
+class PriceFeederTaskBNB(PriceFeederTaskBase):
 
     def __init__(self, price_f_config, config_net, connection_net):
 
