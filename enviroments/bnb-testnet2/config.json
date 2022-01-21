@@ -9,8 +9,8 @@
   "networks": {
     "bnbTestnet": {
       "app_mode": "BNB",
-      "block_expiration": 600,
-      "price_variation_write_blockchain": 0.01,
+      "block_expiration": 1200,
+      "price_variation_write_blockchain": 0.007,
       "min_prices_source": 1,
       "addresses": {
         "MoCMedianizer": "0x6cf318ecf1Cd101755ccdA027B1D47B48b542cBA",
