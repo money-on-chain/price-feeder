@@ -10,7 +10,7 @@ from moneyonchain.medianizer import MoCMedianizer, PriceFeed, RDOCMoCMedianizer,
     ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed, BNBMoCMedianizer, BNBPriceFeed
 from moneyonchain.transaction import receipt_to_log
 
-from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD, BNB_USDT
+from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD, BNB_USDT, USD_ARS_CCB, USD_MXN
 
 from .tasks_manager import TasksManager
 from .logger import log
@@ -38,7 +38,7 @@ def pending_queue_is_full(account_index=0):
     if nonce >= last_used_nonce + 1:
         log.info('Cannot create more transactions for {} as the node queue will be full. Nonce: [{}] '
                  'Last used Nonce: [{}]'.format(
-                  account_address, nonce, last_used_nonce))
+                     account_address, nonce, last_used_nonce))
         return True
 
     return False
@@ -58,7 +58,8 @@ def save_pending_tx_receipt(tx_receipt, task_name):
     result['receipt']['id'] = tx_receipt.txid
     result['receipt']['timestamp'] = datetime.datetime.now()
 
-    log.info("Task :: {0} :: Sending tx: {1}".format(task_name, tx_receipt.txid))
+    log.info("Task :: {0} :: Sending tx: {1}".format(
+        task_name, tx_receipt.txid))
 
     return result
 
@@ -83,7 +84,8 @@ def pending_transaction_receipt(task):
             result['receipt']['timestamp'] = None
             result['receipt']['confirmed'] = True
 
-            log.error("Task :: {0} :: Transaction not found! {1}".format(task.task_name, task.tx_receipt))
+            log.error("Task :: {0} :: Transaction not found! {1}".format(
+                task.task_name, task.tx_receipt))
 
             return result
 
@@ -101,7 +103,8 @@ def pending_transaction_receipt(task):
             result['receipt']['id'] = None
             result['receipt']['timestamp'] = None
 
-            log.info("Task :: {0} :: Confirmed tx! [{1}]".format(task.task_name, task.tx_receipt))
+            log.info("Task :: {0} :: Confirmed tx! [{1}]".format(
+                task.task_name, task.tx_receipt))
 
         # reverted
         elif tx_rcp.confirmations >= 1 and tx_rcp.status == 0:
@@ -121,7 +124,8 @@ def pending_transaction_receipt(task):
                 result['receipt']['timestamp'] = None
                 result['receipt']['confirmed'] = True
 
-                log.error("Task :: {0} :: Timeout Reverted tx! [{1}]".format(task.task_name, task.tx_receipt))
+                log.error("Task :: {0} :: Timeout Reverted tx! [{1}]".format(
+                    task.task_name, task.tx_receipt))
 
         elif tx_rcp.confirmations < 1 and tx_rcp.status < 0:
             elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
@@ -133,9 +137,11 @@ def pending_transaction_receipt(task):
                 result['receipt']['timestamp'] = None
                 result['receipt']['confirmed'] = True
 
-                log.error("Task :: {0} :: Timeout tx! [{1}]".format(task.task_name, task.tx_receipt))
+                log.error("Task :: {0} :: Timeout tx! [{1}]".format(
+                    task.task_name, task.tx_receipt))
             else:
-                log.info("Task :: {0} :: Pending tx state ... [{1}]".format(task.task_name, task.tx_receipt))
+                log.info("Task :: {0} :: Pending tx state ... [{1}]".format(
+                    task.task_name, task.tx_receipt))
 
     return result
 
@@ -163,7 +169,7 @@ def task_reconnect_on_lost_chain(task=None, global_manager=None):
 
         log.error("Task :: Reconnect on lost chain :: "
                   "[ERROR] :: Same block from the last time! Terminate Task Manager! [{0}/{1}]".format(
-                    last_block, block))
+                      last_block, block))
 
         # Put alarm in aws
         aws_put_metric_heart_beat(1)
@@ -214,7 +220,8 @@ class PriceFeederTaskBase(TasksManager):
 
             self.connection_network = 'rskCustomNetwork'
 
-            log.info("Using custom network... id: {}".format(self.connection_network))
+            log.info("Using custom network... id: {}".format(
+                self.connection_network))
 
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
         address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
@@ -259,6 +266,10 @@ class PriceFeederTaskBase(TasksManager):
             return USDT_USD
         elif self.app_mode == 'BNB':
             return BNB_USDT
+        elif self.app_mode == 'ARS':
+            return USD_ARS_CCB
+        elif self.app_mode == 'MXN':
+            return USD_MXN
         else:
             raise Exception("App mode not recognize!")
 
@@ -280,7 +291,6 @@ class PriceFeederTaskBase(TasksManager):
             contract_price_feed = RDOCPriceFeed(network_manager,
                                                 contract_address=address_pricefeed,
                                                 contract_address_moc_medianizer=address_medianizer).from_abi()
-        elif self.app_mode == 'ETH':
             contract_medianizer = ETHMoCMedianizer(network_manager,
                                                    contract_address=address_medianizer).from_abi()
             contract_price_feed = ETHPriceFeed(network_manager,
@@ -298,6 +308,18 @@ class PriceFeederTaskBase(TasksManager):
             contract_price_feed = BNBPriceFeed(network_manager,
                                                contract_address=address_pricefeed,
                                                contract_address_moc_medianizer=address_medianizer).from_abi()
+        elif self.app_mode == 'ARS':
+            contract_medianizer = MoCMedianizer(network_manager,
+                                                contract_address=address_medianizer).from_abi()
+            contract_price_feed = PriceFeed(network_manager,
+                                            contract_address=address_pricefeed,
+                                            contract_address_moc_medianizer=address_medianizer).from_abi()
+        elif self.app_mode == 'MXN':
+            contract_medianizer = MoCMedianizer(network_manager,
+                                                contract_address=address_medianizer).from_abi()
+            contract_price_feed = PriceFeed(network_manager,
+                                            contract_address=address_pricefeed,
+                                            contract_address_moc_medianizer=address_medianizer).from_abi()
         else:
             raise Exception("App mode not recognize!")
 
@@ -347,7 +369,8 @@ class PriceFeederTaskBase(TasksManager):
                     log.warning(f'{exchange} {coinpair} {error}')
 
             if not result or prices_source_count < self.min_prices_source:
-                raise Exception(f"At least we need {self.min_prices_source} price sources.")
+                raise Exception(
+                    f"At least we need {self.min_prices_source} price sources.")
 
         except Exception as e:
             log.error(e, exc_info=True)
@@ -365,7 +388,8 @@ class PriceFeederTaskBase(TasksManager):
                 return pending_tx_receipt
 
         if pending_queue_is_full():
-            log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
+            log.error(
+                "Task :: {0} :: Pending queue is full".format(task.task_name))
             aws_put_metric_heart_beat(1)
             return
 
@@ -379,7 +403,8 @@ class PriceFeederTaskBase(TasksManager):
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
 
         # arguments to pass to tx
-        tx_args = info_contracts['price_feed'].tx_arguments(gas_limit=gas_limit, required_confs=0)
+        tx_args = info_contracts['price_feed'].tx_arguments(
+            gas_limit=gas_limit, required_confs=0)
 
         # expiration block required the price feeder
         last_block = web3.eth.getBlock(web3.eth.blockNumber)
@@ -395,7 +420,8 @@ class PriceFeederTaskBase(TasksManager):
             Web3.toChecksumAddress(address_medianizer),
             tx_args)
         if estimate_gas > gas_limit:
-            log.error("Task :: {0} :: Estimate gas is > to gas limit. No send tx".format(task.task_name))
+            log.error("Task :: {0} :: Estimate gas is > to gas limit. No send tx".format(
+                task.task_name))
             aws_put_metric_heart_beat(1)
             return
 
@@ -432,20 +458,24 @@ class PriceFeederTaskBase(TasksManager):
         if 'last_price_timestamp' in global_manager:
             last_price_timestamp = global_manager['last_price_timestamp']
         else:
-            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=timeout_in_time + 1)
+            last_price_timestamp = datetime.datetime.now(
+            ) - datetime.timedelta(seconds=timeout_in_time + 1)
 
         # read contracts
         info_contracts = self.contracts()
 
         # get the price from oracle and validity of the same
-        last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
+        last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek(
+        )
         if not last_price_oracle_validity:
             # cannot contact medianizer but we continue to put price
-            log.error("Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
+            log.error(
+                "Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
 
         # calculate the price variation from the last price from oracle
-        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
+        price_variation_accepted = decimal.Decimal(
+            price_variation) * last_price_oracle
 
         min_price = abs(last_price_oracle - price_variation_accepted)
         max_price = last_price_oracle + price_variation_accepted
@@ -454,7 +484,8 @@ class PriceFeederTaskBase(TasksManager):
 
         if not price_no_precision:
             # when no price finish task and put an alarm
-            log.error("Task :: {0} :: No price source!.".format(task.task_name))
+            log.error(
+                "Task :: {0} :: No price source!.".format(task.task_name))
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
             return result
 
@@ -462,28 +493,31 @@ class PriceFeederTaskBase(TasksManager):
         is_in_range = price_no_precision < min_price or price_no_precision > max_price
 
         # is more than 5 minutes from the last write
-        is_in_time = (last_price_timestamp + datetime.timedelta(seconds=timeout_in_time) < now)
+        is_in_time = (last_price_timestamp +
+                      datetime.timedelta(seconds=timeout_in_time) < now)
 
         td_delta = now - last_price_timestamp
 
         log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
                  "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Last write ago: [{6}]".format(
-            task.task_name,
-            last_price_oracle,
-            last_price,
-            price_no_precision,
-            is_in_range,
-            is_in_time,
-            td_delta.seconds))
+                     task.task_name,
+                     last_price_oracle,
+                     last_price,
+                     price_no_precision,
+                     is_in_range,
+                     is_in_time,
+                     td_delta.seconds))
 
         # IF is in range or not in range but is in time
         if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
 
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, task=task)
+                result = self.post_price(
+                    price_no_precision, info_contracts, task=task)
             else:
-                log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
+                log.info("Task :: {0} :: Simulation Post! ".format(
+                    task.task_name))
 
             # save the last price to compare
             global_manager['last_price'] = price_no_precision
@@ -512,7 +546,8 @@ class PriceFeederTaskBase(TasksManager):
 
         if not info_contracts['medianizer'].compute()[1] or backup_writes > 0:
 
-            result = self.task_price_feed(task=task, global_manager=global_manager)
+            result = self.task_price_feed(
+                task=task, global_manager=global_manager)
 
             aws_put_metric_heart_beat(1)
 
@@ -528,7 +563,8 @@ class PriceFeederTaskBase(TasksManager):
                                                                                          backup_writes))
 
         else:
-            log.info("Task :: {0} :: [NO BACKUP MODE ACTIVATED]".format(task.task_name))
+            log.info("Task :: {0} :: [NO BACKUP MODE ACTIVATED]".format(
+                task.task_name))
 
         # Save backup writes to later use
         global_manager['backup_writes'] = backup_writes
@@ -557,28 +593,34 @@ class PriceFeederTaskBase(TasksManager):
         if not info_contracts['medianizer'].compute()[1] and price_validity:
 
             if pending_queue_is_full():
-                log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
+                log.error(
+                    "Task :: {0} :: Pending queue is full".format(task.task_name))
                 aws_put_metric_heart_beat(1)
                 return
 
-            tx_args = info_contracts['medianizer'].tx_arguments(gas_limit=gas_limit, required_confs=0)
+            tx_args = info_contracts['medianizer'].tx_arguments(
+                gas_limit=gas_limit, required_confs=0)
 
             # check estimate gas is greater than gas limit
-            estimate_gas = info_contracts['medianizer'].sc.poke.estimate_gas(tx_args)
+            estimate_gas = info_contracts['medianizer'].sc.poke.estimate_gas(
+                tx_args)
             if estimate_gas > gas_limit:
-                log.error("Task :: {0} :: Estimate gas is > to gas limit. No send tx".format(task.task_name))
+                log.error("Task :: {0} :: Estimate gas is > to gas limit. No send tx".format(
+                    task.task_name))
                 aws_put_metric_heart_beat(1)
                 return
 
             tx_receipt = info_contracts['medianizer'].sc.poke(tx_args)
-            log.error("Task :: {0} :: Not valid price! Disabling Price!".format(task.task_name))
+            log.error(
+                "Task :: {0} :: Not valid price! Disabling Price!".format(task.task_name))
             aws_put_metric_heart_beat(1)
 
             return save_pending_tx_receipt(tx_receipt, task.task_name)
 
         # if no valid price in oracle please send alarm
         if not price_validity:
-            log.error("Task :: {0} :: No valid price in oracle!".format(task.task_name))
+            log.error(
+                "Task :: {0} :: No valid price in oracle!".format(task.task_name))
             aws_put_metric_heart_beat(1)
 
         log.info("Task :: {0} :: No!".format(task.task_name))
@@ -596,7 +638,8 @@ class PriceFeederTaskBase(TasksManager):
 
         # Reconnect on lost chain
         log.info("Job add: 99. Reconnect on lost chain")
-        self.add_task(task_reconnect_on_lost_chain, args=[], wait=180, timeout=180)
+        self.add_task(task_reconnect_on_lost_chain,
+                      args=[], wait=180, timeout=180)
 
         backup_mode = False
         if 'backup_mode' in self.options:
@@ -685,20 +728,24 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         if 'last_price_timestamp' in global_manager:
             last_price_timestamp = global_manager['last_price_timestamp']
         else:
-            last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=timeout_in_time + 1)
+            last_price_timestamp = datetime.datetime.now(
+            ) - datetime.timedelta(seconds=timeout_in_time + 1)
 
         # read contracts
         info_contracts = self.contracts()
 
         # get the price from oracle and validity of the same
-        last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
+        last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek(
+        )
         if not last_price_oracle_validity:
             # cannot contact medianizer but we continue to put price
-            log.error("Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
+            log.error(
+                "Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
 
         # calculate the price variation from the last price from oracle
-        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
+        price_variation_accepted = decimal.Decimal(
+            price_variation) * last_price_oracle
 
         min_price = abs(last_price_oracle - price_variation_accepted)
         max_price = last_price_oracle + price_variation_accepted
@@ -707,7 +754,8 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
 
         if not price_no_precision:
             # when no price finish task and put an alarm
-            log.error("Task :: {0} :: No price source!.".format(task.task_name))
+            log.error(
+                "Task :: {0} :: No price source!.".format(task.task_name))
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
             return result
 
@@ -728,27 +776,30 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         td_delta = now - last_price_timestamp
 
         # is more than 5 minutes from the last write
-        is_in_time = (last_price_timestamp + datetime.timedelta(seconds=timeout_in_time) < now)
+        is_in_time = (last_price_timestamp +
+                      datetime.timedelta(seconds=timeout_in_time) < now)
 
         log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
                  "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Floor: [{6:.6}] Last write ago: [{7}]".format(
-            task.task_name,
-            last_price_oracle,
-            last_price,
-            price_no_precision,
-            is_in_range,
-            is_in_time,
-            price_floor,
-            td_delta.seconds))
+                     task.task_name,
+                     last_price_oracle,
+                     last_price,
+                     price_no_precision,
+                     is_in_range,
+                     is_in_time,
+                     price_floor,
+                     td_delta.seconds))
 
         # IF is in range or not in range but is in time
         if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
 
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, task=task)
+                result = self.post_price(
+                    price_no_precision, info_contracts, task=task)
             else:
-                log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
+                log.info("Task :: {0} :: Simulation Post! ".format(
+                    task.task_name))
 
             # save the last price to compare
             global_manager['last_price'] = price_no_precision
@@ -777,6 +828,20 @@ class PriceFeederTaskUSDT(PriceFeederTaskBase):
 
 
 class PriceFeederTaskBNB(PriceFeederTaskBase):
+
+    def __init__(self, price_f_config, config_net, connection_net):
+
+        super().__init__(price_f_config, config_net, connection_net)
+
+
+class PriceFeederTaskARS(PriceFeederTaskBase):
+
+    def __init__(self, price_f_config, config_net, connection_net):
+
+        super().__init__(price_f_config, config_net, connection_net)
+
+
+class PriceFeederTaskMXN(PriceFeederTaskBase):
 
     def __init__(self, price_f_config, config_net, connection_net):
 

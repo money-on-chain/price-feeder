@@ -1,6 +1,6 @@
 from config_parser import ConfigParser
 from price_feeder.tasks import PriceFeederTaskMoC, PriceFeederTaskRIF, PriceFeederTaskETH, PriceFeederTaskUSDT, \
-    PriceFeederTaskBNB
+    PriceFeederTaskBNB, PriceFeederTaskARS, PriceFeederTaskMXN
 
 
 if __name__ == '__main__':
@@ -35,6 +35,18 @@ if __name__ == '__main__':
         )
     elif app_mode == 'BNB':
         price_feeder_tasks = PriceFeederTaskBNB(
+            config_parser.config,
+            config_parser.config_network,
+            config_parser.connection_network
+        )
+    elif app_mode == 'ARS':
+        price_feeder_tasks = PriceFeederTaskARS(
+            config_parser.config,
+            config_parser.config_network,
+            config_parser.connection_network
+        )
+    elif app_mode == 'MXN':
+        price_feeder_tasks = PriceFeederTaskMXN(
             config_parser.config,
             config_parser.config_network,
             config_parser.connection_network

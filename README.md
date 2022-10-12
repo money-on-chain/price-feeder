@@ -1,4 +1,4 @@
-This is the job app that feed contract (price feeder) with price BTC-USD | RIF-USD | ETH-BTC | USDT-USD
+This is the job app that feed contract (price feeder) with price BTC-USD | RIF-USD | ETH-BTC | USDT-USD | USD-ARS | USD-MXN
 
 # Money on Chain - Price Feeder
 
@@ -95,8 +95,8 @@ console> brownie networks add RskNetwork rskMainnetLocal host=http://localhost:4
 
 | Network Name      | Network node          | Host                               | Chain    |
 |-------------------|-----------------------|------------------------------------|----------|
-| rskTestnetPublic   | RSK Testnet Public    | https://public-node.testnet.rsk.co | 31       |    
-| rskTestnetLocal    | RSK Testnet Local     | http://localhost:4444              | 31       |
+| rskTestnetPublic  | RSK Testnet Public    | https://public-node.testnet.rsk.co | 31       |    
+| rskTestnetLocal   | RSK Testnet Local     | http://localhost:4444              | 31       |
 | rskMainnetPublic  | RSK Mainnet Public    | https://public-node.rsk.co         | 30       |
 | rskMainnetLocal   | RSK Mainnet Local     | http://localhost:4444              | 30       |
 
