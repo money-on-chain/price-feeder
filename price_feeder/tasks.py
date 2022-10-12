@@ -332,21 +332,23 @@ class PriceFeederTaskBase(TasksManager):
         if detail['prices']:
             count = 0
             for price_source in detail['prices']:
+                percentual_weighting = price_source['percentual_weighing'] # weigh(t)ing? there is a typo in moc_prices_source? yes!
+                percentual_weighting = percentual_weighting*100 if percentual_weighting else 0
                 count += 1
                 row = list()
                 row.append(count)
                 row.append(price_source['description'])
                 row.append(price_source['price'])
-                row.append(price_source['weighing'])
-                row.append(price_source['percentual_weighing'])
+                row.append('Y' if price_source['ok'] else 'N')
+                row.append(price_source['weighing']) # weigh(t)ing? there is a typo in moc_prices_source? yes!
+                row.append(f"{percentual_weighting:.2f}")
                 row.append(price_source['age'])
-                row.append(price_source['ok'])
                 row.append(price_source['last_change_timestamp'])
                 table.append(row)
         if table:
-            table.sort(key=lambda x: str(x[3]), reverse=True)
+            table.sort(key=lambda x: str(x[4]), reverse=True)
             log.info("\n{}".format(tabulate(table, headers=[
-                '', 'Description', 'Price', 'Weighting', '% Weighting', 'Age', 'Ok', 'Last Change'
+                '', 'Description', 'Price', 'Ok', 'Weighting', '% Weighting', 'Age', 'Last Change'
             ])))
         else:
             log.warn("No info from source!")
