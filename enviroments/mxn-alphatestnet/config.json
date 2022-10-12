@@ -1,0 +1,21 @@
+{
+  "backup_mode": false,
+  "backup_writes": 100,
+  "interval": 25,
+  "timeout": 180,
+  "gas_price": 68000000,
+  "is_simulation": false,
+  "gas_limit": 200000,
+  "networks": {
+    "mocMainnet2": {
+      "app_mode": "MXN",
+      "block_expiration": 600,
+      "price_variation_write_blockchain": 0.001,
+      "min_prices_source": 1,
+      "addresses": {
+        "MoCState": "0x0000000000000000000000000000000000000000",
+        "MoCMedianizer": "0x0000000000000000000000000000000000000000",
+      }
+    }
+  }
+}
