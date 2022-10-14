@@ -4,7 +4,7 @@
   "interval": 60,
   "timeout": 180,
   "gas_price": 33000000000,
-  "is_simulation": true,
+  "is_simulation": false,
   "gas_limit": 200000,
   "networks": {
     "mxnPolygonMumbai": {
@@ -13,8 +13,8 @@
       "price_variation_write_blockchain": 0.01,
       "min_prices_source": 1,
       "addresses": {
-        "MoCMedianizer": "0x0000000000000000000000000000000000000000", 
-        "PriceFeed": "0x0000000000000000000000000000000000000000"
+        "MoCMedianizer": "0x1Fd04611Baf8286836DBEDb27e138c479e1961BC",
+        "PriceFeed": "0x668Bf4c10D0e625C3f8893649a08E682c1b7424F"
       }
     }
   }
