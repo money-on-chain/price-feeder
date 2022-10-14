@@ -1,0 +1,21 @@
+{
+  "backup_mode": false,
+  "backup_writes": 100,
+  "interval": 60,
+  "timeout": 180,
+  "gas_price": 33000000000,
+  "is_simulation": true,
+  "gas_limit": 200000,
+  "networks": {
+    "mxnPolygonMumbai": {
+      "app_mode": "MXN",
+      "block_expiration": 1000000,
+      "price_variation_write_blockchain": 0.01,
+      "min_prices_source": 1,
+      "addresses": {
+        "MoCMedianizer": "0x0000000000000000000000000000000000000000", 
+        "PriceFeed": "0x0000000000000000000000000000000000000000"
+      }
+    }
+  }
+}
