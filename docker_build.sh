@@ -9,7 +9,7 @@ while getopts ":e:c:" o; do
     case "${o}" in
         e)
             e=${OPTARG}
-             ((e == "moc-alphatestnet" || e == "moc-testnet" || e == "moc-mainnet" || e == "rdoc-testnet" || e == "rdoc-mainnet" || e == "eth-testnet" || e == "eth-mainnet"  || e == "tether-testnet" || e == "tether-mainnet" )) || usage
+             ((e == "mxn-rsk-testnet" || e == "mxn-polygon-mumbai" || e == "ars-rsk-testnet" || e == "ars-polygon-mumbai" || e == "bnb-testnet" || e == "moc-alphatestnet" || e == "moc-testnet" || e == "moc-mainnet" || e == "rdoc-testnet" || e == "rdoc-mainnet" || e == "eth-testnet" || e == "eth-mainnet"  || e == "tether-testnet" || e == "tether-mainnet" )) || usage
             case $e in
                 moc-alphatestnet)
                     ENV=$e
