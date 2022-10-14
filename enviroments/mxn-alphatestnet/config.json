@@ -13,8 +13,8 @@
       "price_variation_write_blockchain": 0.001,
       "min_prices_source": 1,
       "addresses": {
-        "MoCMedianizer": "0x0000000000000000000000000000000000000000", 
-        "PriceFeed": "0x0000000000000000000000000000000000000000"
+        "MoCMedianizer": "0x6951020041bFA2565877BF0eaF7f5DF039b490dC", 
+        "PriceFeed": "0xb913c7494b918ED637D4DF1308E1b7fF820b75b6"
       }
     }
   }
