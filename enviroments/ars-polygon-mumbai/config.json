@@ -10,7 +10,7 @@
     "arsPolygonMumbai": {
       "app_mode": "ARS",
       "block_expiration": 1000000,
-      "price_variation_write_blockchain": 0.01,
+      "price_variation_write_blockchain": 0.005,
       "min_prices_source": 1,
       "addresses": {
         "MoCMedianizer": "0x10259a35573E1e8f992fc4c3e04218Ea0Da29172",
