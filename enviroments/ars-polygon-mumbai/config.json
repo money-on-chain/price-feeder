@@ -4,7 +4,7 @@
   "interval": 60,
   "timeout": 180,
   "gas_price": 33000000000,
-  "is_simulation": true,
+  "is_simulation": false,
   "gas_limit": 200000,
   "networks": {
     "arsPolygonMumbai": {
