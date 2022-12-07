@@ -7,7 +7,7 @@ from tabulate import tabulate
 from moneyonchain.networks import network_manager, web3, chain
 from moneyonchain.rdoc import RDOCMoCState
 from moneyonchain.medianizer import MoCMedianizer, PriceFeed, RDOCMoCMedianizer, RDOCPriceFeed, \
-    ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed, BNBMoCMedianizer, BNBPriceFeed
+    ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed
 from moneyonchain.transaction import receipt_to_log
 
 from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD, BNB_USDT, USD_ARS_CCB, USD_MXN
@@ -303,9 +303,9 @@ class PriceFeederTaskBase(TasksManager):
                                                 contract_address=address_pricefeed,
                                                 contract_address_moc_medianizer=address_medianizer).from_abi()
         elif self.app_mode == 'BNB':
-            contract_medianizer = BNBMoCMedianizer(network_manager,
+            contract_medianizer = MoCMedianizer(network_manager,
                                                    contract_address=address_medianizer).from_abi()
-            contract_price_feed = BNBPriceFeed(network_manager,
+            contract_price_feed = PriceFeed(network_manager,
                                                contract_address=address_pricefeed,
                                                contract_address_moc_medianizer=address_medianizer).from_abi()
         elif self.app_mode == 'ARS':
