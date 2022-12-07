@@ -6,5 +6,5 @@ then
     # Ex.: export APP_CONNECTION_NETWORK=https://rpc-mumbai.matic.today,80001,Polygon,https://mumbai.polygonscan.com/
     echo "Adding custom network ..."
     arrConn=(${APP_CONNECTION_NETWORK//,/ })
-    brownie networks add ${arrConn[2]}Network ${arrConn[2]}CustomNetwork host=${arrConn[0]} chainid=${arrConn[1]} explorer=${arrConn[3]} timeout=180
+    brownie networks add ${arrConn[2]}Network rskCustomNetwork host=${arrConn[0]} chainid=${arrConn[1]} explorer=${arrConn[3]} timeout=180
 fi
