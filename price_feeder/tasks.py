@@ -6,9 +6,7 @@ from tabulate import tabulate
 
 from moneyonchain.networks import network_manager, web3, chain
 from moneyonchain.rdoc import RDOCMoCState
-from moneyonchain.medianizer import MoCMedianizer, PriceFeed, RDOCMoCMedianizer, RDOCPriceFeed, \
-    ETHMoCMedianizer, ETHPriceFeed, USDTMoCMedianizer, USDTPriceFeed, BNBMoCMedianizer, BNBPriceFeed
-from moneyonchain.transaction import receipt_to_log
+from moneyonchain.medianizer import MoCMedianizer, PriceFeed
 
 from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD, BNB_USDT
 
@@ -17,7 +15,7 @@ from .logger import log
 from .utils import aws_put_metric_heart_beat
 
 
-__VERSION__ = '2.1.8'
+__VERSION__ = '2.1.9'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -268,38 +266,11 @@ class PriceFeederTaskBase(TasksManager):
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
         address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
 
-        if self.app_mode == 'MoC':
-            contract_medianizer = MoCMedianizer(network_manager,
-                                                contract_address=address_medianizer).from_abi()
-            contract_price_feed = PriceFeed(network_manager,
-                                            contract_address=address_pricefeed,
-                                            contract_address_moc_medianizer=address_medianizer).from_abi()
-        elif self.app_mode == 'RIF':
-            contract_medianizer = RDOCMoCMedianizer(network_manager,
-                                                    contract_address=address_medianizer).from_abi()
-            contract_price_feed = RDOCPriceFeed(network_manager,
-                                                contract_address=address_pricefeed,
-                                                contract_address_moc_medianizer=address_medianizer).from_abi()
-        elif self.app_mode == 'ETH':
-            contract_medianizer = ETHMoCMedianizer(network_manager,
-                                                   contract_address=address_medianizer).from_abi()
-            contract_price_feed = ETHPriceFeed(network_manager,
-                                               contract_address=address_pricefeed,
-                                               contract_address_moc_medianizer=address_medianizer).from_abi()
-        elif self.app_mode == 'USDT':
-            contract_medianizer = USDTMoCMedianizer(network_manager,
-                                                    contract_address=address_medianizer).from_abi()
-            contract_price_feed = USDTPriceFeed(network_manager,
-                                                contract_address=address_pricefeed,
-                                                contract_address_moc_medianizer=address_medianizer).from_abi()
-        elif self.app_mode == 'BNB':
-            contract_medianizer = BNBMoCMedianizer(network_manager,
-                                                   contract_address=address_medianizer).from_abi()
-            contract_price_feed = BNBPriceFeed(network_manager,
-                                               contract_address=address_pricefeed,
-                                               contract_address_moc_medianizer=address_medianizer).from_abi()
-        else:
-            raise Exception("App mode not recognize!")
+        contract_medianizer = MoCMedianizer(network_manager,
+                                            contract_address=address_medianizer).from_abi()
+        contract_price_feed = PriceFeed(network_manager,
+                                        contract_address=address_pricefeed,
+                                        contract_address_moc_medianizer=address_medianizer).from_abi()
 
         return dict(medianizer=contract_medianizer, price_feed=contract_price_feed)
 
@@ -497,7 +468,7 @@ class PriceFeederTaskBase(TasksManager):
             return save_pending_tx_receipt(None, task.task_name)
 
     def task_price_feed_backup(self, task=None, global_manager=None):
-        """ Only start to work only when we dont have price """
+        """ Only start to work only when we don't have price """
 
         result = dict()
 
@@ -651,11 +622,11 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         address_pricefeed = self.options['networks'][self.config_network]['addresses']['PriceFeed']
         address_mocstate = self.options['networks'][self.config_network]['addresses']['MoCState']
 
-        contract_medianizer = RDOCMoCMedianizer(network_manager,
-                                                contract_address=address_medianizer).from_abi()
-        contract_price_feed = RDOCPriceFeed(network_manager,
-                                            contract_address=address_pricefeed,
-                                            contract_address_moc_medianizer=address_medianizer).from_abi()
+        contract_medianizer = MoCMedianizer(network_manager,
+                                            contract_address=address_medianizer).from_abi()
+        contract_price_feed = PriceFeed(network_manager,
+                                        contract_address=address_pricefeed,
+                                        contract_address_moc_medianizer=address_medianizer).from_abi()
         contract_moc_state = RDOCMoCState(network_manager,
                                           contract_address=address_mocstate).from_abi()
 
