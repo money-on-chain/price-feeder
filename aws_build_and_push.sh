@@ -29,6 +29,9 @@ while getopts ":e:c:i:r:" o; do
                 rdoc-mainnet)
                     ENV=$e
                     ;;
+                rdoc-mainnet-backup)
+                    ENV=$e
+                    ;;
                 eth-testnet)
                     ENV=$e
                     ;;
