@@ -1,7 +1,7 @@
 {
   "backup_mode": false,
   "backup_writes": 100,
-  "interval": 25,
+  "interval": 2,
   "timeout": 180,
   "gas_price": 68000000,
   "is_simulation": false,
