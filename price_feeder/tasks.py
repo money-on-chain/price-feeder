@@ -477,37 +477,32 @@ class PriceFeederTaskBase(TasksManager):
 
         result = dict()
 
-        # get the last price we insert as a feeder
-        if 'backup_writes' in global_manager:
-            backup_writes = global_manager['backup_writes']
-        else:
-            backup_writes = 0
+        expiration_enter_before = self.options['backup_feeder_expiration_enter_before']
 
         # read contracts
         info_contracts = self.contracts()
 
-        if not info_contracts['medianizer'].compute()[1] or backup_writes > 0:
+        d_price_feeder_exp = datetime.datetime.fromtimestamp(info_contracts['price_feed'].zzz())
+        now = datetime.datetime.now()
+        if d_price_feeder_exp > now:
+            delta_to_expire = (d_price_feeder_exp - now).seconds
+        else:
+            delta_to_expire = 0
+
+        # is price feeder is going to expire, please anticipate this event and send
+        # write to the blockchain
+        if delta_to_expire <= expiration_enter_before:
 
             result = self.task_price_feed(task=task, global_manager=global_manager)
 
             aws_put_metric_heart_beat(1)
 
-            if backup_writes <= 0:
-                if 'backup_writes' in self.options:
-                    backup_writes = self.options['backup_writes']
-                else:
-                    backup_writes = 100
-
-            backup_writes -= 1
-
-            log.error("Task :: {0} :: BACKUP MODE ACTIVATED! WRITE REMAINING:{1}".format(task.task_name,
-                                                                                         backup_writes))
+            log.error("Task :: {0} :: BACKUP MODE ACTIVATED! Expiring price in {1} seconds ".format(task.task_name,
+                                                                                                    delta_to_expire))
 
         else:
-            log.info("Task :: {0} :: [NO BACKUP MODE ACTIVATED]".format(task.task_name))
-
-        # Save backup writes to later use
-        global_manager['backup_writes'] = backup_writes
+            log.info("Task :: {0} :: [NO BACKUP MODE ACTIVATED] Expiring price in {1} seconds".format(task.task_name,
+                                                                                                      delta_to_expire))
 
         if result:
             return result

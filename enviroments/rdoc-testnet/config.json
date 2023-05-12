@@ -1,6 +1,6 @@
 {
-  "backup_mode": false,
-  "backup_writes": 100,
+  "backup_mode": true,
+  "backup_feeder_expiration_enter_before": 300,
   "interval": 2,
   "timeout": 180,
   "gas_price": 68000000,
