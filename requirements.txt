@@ -2,4 +2,4 @@ boto3
 moneyonchain==2.1.14
 tabulate
 pebble
-moneyonchain-prices-source==0.6.2
+moneyonchain-prices-source==0.6.3

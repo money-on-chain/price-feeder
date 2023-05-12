@@ -15,7 +15,7 @@ from .logger import log
 from .utils import aws_put_metric_heart_beat
 
 
-__VERSION__ = '2.1.9'
+__VERSION__ = '2.1.10'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -195,7 +195,7 @@ class PriceFeederTaskBase(TasksManager):
         except KeyError:
             self.min_prices_source = 1
 
-        # install custom network if needit
+        # install custom network if need it
         if self.connection_network.startswith("https") or self.connection_network.startswith("http"):
 
             a_connection = self.connection_network.split(',')
@@ -304,7 +304,7 @@ class PriceFeederTaskBase(TasksManager):
 
         d = {}
         try:
-            result = get_price(self.coinpair(), detail=d)
+            result = get_price(self.coinpair(), detail=d, ignore_zero_weighing=True)
             self.log_info_from_sources(d)
 
             prices_source_count = 0
@@ -326,9 +326,9 @@ class PriceFeederTaskBase(TasksManager):
 
         return result
 
-    def post_price(self, price_no_precision, info_contracts, task=None):
+    def post_price(self, price_no_precision, info_contracts, task=None, global_manager=None):
 
-        # Not call until tx confirmated!
+        # Not call until tx confirmed!
         pending_tx_receipt = pending_transaction_receipt(task)
         if 'receipt' in pending_tx_receipt:
             if not pending_tx_receipt['receipt']['confirmed'] or pending_tx_receipt['receipt']['reverted']:
@@ -377,6 +377,12 @@ class PriceFeederTaskBase(TasksManager):
             Web3.toChecksumAddress(address_medianizer),
             tx_args)
 
+        # save the last price to compare
+        global_manager['last_price'] = price_no_precision
+
+        # save the last timestamp to compare
+        global_manager['last_price_timestamp'] = datetime.datetime.now()
+
         return save_pending_tx_receipt(tx_receipt, task.task_name)
 
     def task_price_feed(self, task=None, global_manager=None):
@@ -387,14 +393,14 @@ class PriceFeederTaskBase(TasksManager):
         now = datetime.datetime.now()
 
         # price variation accepted
-        price_variation = self.options['networks'][self.config_network]['price_variation_write_blockchain']
+        price_variation_write_blockchain = self.options['networks'][self.config_network]['price_variation_write_blockchain']
 
         # max time in seconds that price is valid
         block_expiration = self.options['networks'][self.config_network]['block_expiration']
 
         timeout_in_time = abs(block_expiration - MAX_PENDING_BLOCK_TIME)
 
-        # get the last price we insert as a feeder
+        # get the last price we insert as a feeder can be in pending state
         if 'last_price' in global_manager:
             last_price = decimal.Decimal(global_manager['last_price'])
         else:
@@ -408,19 +414,7 @@ class PriceFeederTaskBase(TasksManager):
         # read contracts
         info_contracts = self.contracts()
 
-        # get the price from oracle and validity of the same
-        last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
-        if not last_price_oracle_validity:
-            # cannot contact medianizer but we continue to put price
-            log.error("Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
-            aws_put_metric_heart_beat(1)  # Put an alarm in AWS
-
-        # calculate the price variation from the last price from oracle
-        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
-
-        min_price = abs(last_price_oracle - price_variation_accepted)
-        max_price = last_price_oracle + price_variation_accepted
-
+        # get new price from source
         price_no_precision = self.price_from_sources()
 
         if not price_no_precision:
@@ -429,22 +423,39 @@ class PriceFeederTaskBase(TasksManager):
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
             return result
 
-        # is outside the range so we need to write to blockchain
-        is_in_range = price_no_precision < min_price or price_no_precision > max_price
+        # get the price from oracle and validity of the same
+        last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
+        if not last_price_oracle_validity:
+            # cannot contact medianizer but we continue to put price
+            log.error("Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
+            aws_put_metric_heart_beat(1)  # Put an alarm in AWS
+
+        # calculate the price variation from the last price from oracle
+        price_variation_oracle = abs((price_no_precision / last_price_oracle) - 1)
+
+        # Accepted variation to write to blockchain
+        is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
+
+        td_delta = now - last_price_timestamp
 
         # is more than 5 minutes from the last write
         is_in_time = (last_price_timestamp + datetime.timedelta(seconds=timeout_in_time) < now)
 
-        td_delta = now - last_price_timestamp
-
-        log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
-                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Last write ago: [{6}]".format(
+        log.info("Task :: {0} :: "
+                 "Oracle: [{1:.6f}] "
+                 "Last: [{2:.6f}] "
+                 "New: [{3:.6f}] "
+                 "Is in range: [{4}] "
+                 "Is in time: [{5}] "
+                 "Variation: [{6:.6}%] "
+                 "Last write ago: [{7}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
             price_no_precision,
             is_in_range,
             is_in_time,
+            price_variation_oracle * 100,
             td_delta.seconds))
 
         # IF is in range or not in range but is in time
@@ -452,15 +463,9 @@ class PriceFeederTaskBase(TasksManager):
 
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, task=task)
+                result = self.post_price(price_no_precision, info_contracts, task=task, global_manager=global_manager)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
-
-            # save the last price to compare
-            global_manager['last_price'] = price_no_precision
-
-            # save the last timestamp to compare
-            global_manager['last_price_timestamp'] = datetime.datetime.now()
 
         if result:
             return result
@@ -640,14 +645,14 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         now = datetime.datetime.now()
 
         # price variation accepted
-        price_variation = self.options['networks'][self.config_network]['price_variation_write_blockchain']
+        price_variation_write_blockchain = self.options['networks'][self.config_network]['price_variation_write_blockchain']
 
         # max time in seconds that price is valid
         block_expiration = self.options['networks'][self.config_network]['block_expiration']
 
         timeout_in_time = abs(block_expiration - MAX_PENDING_BLOCK_TIME)
 
-        # get the last price we insert as a feeder
+        # get the last price we insert as a feeder can be in pending state
         if 'last_price' in global_manager:
             last_price = decimal.Decimal(global_manager['last_price'])
         else:
@@ -661,6 +666,14 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # read contracts
         info_contracts = self.contracts()
 
+        price_no_precision = self.price_from_sources()
+
+        if not price_no_precision:
+            # when no price finish task and put an alarm
+            log.error("Task :: {0} :: No price source!.".format(task.task_name))
+            aws_put_metric_heart_beat(1)  # Put an alarm in AWS
+            return result
+
         # get the price from oracle and validity of the same
         last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
         if not last_price_oracle_validity:
@@ -669,18 +682,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
 
         # calculate the price variation from the last price from oracle
-        price_variation_accepted = decimal.Decimal(price_variation) * last_price_oracle
-
-        min_price = abs(last_price_oracle - price_variation_accepted)
-        max_price = last_price_oracle + price_variation_accepted
-
-        price_no_precision = self.price_from_sources()
-
-        if not price_no_precision:
-            # when no price finish task and put an alarm
-            log.error("Task :: {0} :: No price source!.".format(task.task_name))
-            aws_put_metric_heart_beat(1)  # Put an alarm in AWS
-            return result
+        price_variation_oracle = abs((price_no_precision / last_price_oracle) - 1)
 
         # if the price is below the floor, I don't publish it
         ema = info_contracts['moc_state'].bitcoin_moving_average()
@@ -693,22 +695,30 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                 price_floor))
             return result
 
-        # is outside the range so we need to write to blockchain
-        is_in_range = price_no_precision < min_price or price_no_precision > max_price
+        # Accepted variation to write to blockchain
+        is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
 
         td_delta = now - last_price_timestamp
 
         # is more than 5 minutes from the last write
         is_in_time = (last_price_timestamp + datetime.timedelta(seconds=timeout_in_time) < now)
 
-        log.info("Task :: {0} :: Oracle: [{1:.6f}] Last: [{2:.6f}] "
-                 "New: [{3:.6f}] Is in range: [{4}] Is in time: [{5}] Floor: [{6:.6}] Last write ago: [{7}]".format(
+        log.info("Task :: {0} :: "
+                 "Oracle: [{1:.6f}] "
+                 "Last: [{2:.6f}] "
+                 "New: [{3:.6f}] "
+                 "Is in range: [{4}] "
+                 "Is in time: [{5}] "
+                 "Variation: [{6:.6}%] "
+                 "Floor: [{7:.6}] "
+                 "Last write ago: [{8}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
             price_no_precision,
             is_in_range,
             is_in_time,
+            price_variation_oracle*100,
             price_floor,
             td_delta.seconds))
 
@@ -717,15 +727,9 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
 
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, task=task)
+                result = self.post_price(price_no_precision, info_contracts, task=task, global_manager=global_manager)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
-
-            # save the last price to compare
-            global_manager['last_price'] = price_no_precision
-
-            # save the last timestamp to compare
-            global_manager['last_price_timestamp'] = datetime.datetime.now()
 
         if result:
             return result
