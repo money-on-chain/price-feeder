@@ -70,7 +70,7 @@ address.
 
 **Requirement and installation**
  
-*  We need Python 3.6+
+*  Required Python 3.9
 
 Install libraries
 
