@@ -15,7 +15,7 @@ from .logger import log
 from .utils import aws_put_metric_heart_beat
 
 
-__VERSION__ = '2.1.10'
+__VERSION__ = '2.1.11'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
