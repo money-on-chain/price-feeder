@@ -3,3 +3,4 @@ moneyonchain==2.1.14
 tabulate
 pebble
 moneyonchain-prices-source==0.6.3
+aiohttp>=3.8

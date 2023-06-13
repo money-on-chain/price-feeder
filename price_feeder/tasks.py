@@ -349,8 +349,20 @@ class PriceFeederTaskBase(TasksManager):
         # get the medianizer address from options
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
 
+        # Set gas price
+        # static gas price or from node * multiply factor
+        if self.options['gas_price']:
+            calculated_gas_price = decimal.Decimal(Web3.fromWei(self.options['gas_price'], 'ether'))
+        else:
+            node_gas_price = decimal.Decimal(Web3.fromWei(web3.eth.gas_price, 'ether'))
+            calculated_gas_price = node_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
+
         # arguments to pass to tx
-        tx_args = info_contracts['price_feed'].tx_arguments(gas_limit=gas_limit, required_confs=0)
+        tx_args = info_contracts['price_feed'].tx_arguments(
+            gas_limit=gas_limit,
+            gas_price=calculated_gas_price * 10 ** 18,
+            required_confs=0
+        )
 
         # expiration block required the price feeder
         last_block = web3.eth.getBlock(web3.eth.blockNumber)
