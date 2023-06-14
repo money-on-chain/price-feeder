@@ -3,8 +3,8 @@
   "backup_writes": 100,
   "interval": 25,
   "timeout": 180,
-  "gas_price": null,
-  "gas_price_multiply_factor": 1.01,
+  "gas_price": 65820000,
+  "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
   "gas_limit": 200000,
   "networks": {
