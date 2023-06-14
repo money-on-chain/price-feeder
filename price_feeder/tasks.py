@@ -15,7 +15,7 @@ from .logger import log
 from .utils import aws_put_metric_heart_beat
 
 
-__VERSION__ = '2.1.11'
+__VERSION__ = '2.1.12'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -349,13 +349,17 @@ class PriceFeederTaskBase(TasksManager):
         # get the medianizer address from options
         address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
 
-        # Set gas price
-        # static gas price or from node * multiply factor
-        if self.options['gas_price']:
-            calculated_gas_price = decimal.Decimal(Web3.fromWei(self.options['gas_price'], 'ether'))
-        else:
-            node_gas_price = decimal.Decimal(Web3.fromWei(web3.eth.gas_price, 'ether'))
-            calculated_gas_price = node_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
+        # get gas price from node
+        node_gas_price = decimal.Decimal(Web3.fromWei(web3.eth.gas_price, 'ether'))
+
+        # fixed gas price
+        gas_price = decimal.Decimal(Web3.fromWei(self.options['gas_price'], 'ether'))
+
+        # the max value between node or fixed gas price
+        using_gas_price = max(node_gas_price, gas_price)
+
+        # Multiply factor of the using gas price
+        calculated_gas_price = using_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
 
         # arguments to pass to tx
         tx_args = info_contracts['price_feed'].tx_arguments(
