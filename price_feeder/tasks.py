@@ -335,8 +335,6 @@ class PriceFeederTaskBase(TasksManager):
             if not pending_tx_receipt['receipt']['confirmed'] or pending_tx_receipt['receipt']['reverted']:
                 # Continue on pending status or reverted
                 return pending_tx_receipt
-        if 'receipt' in pending_tx_receipt and re_post:
-            last_used_nonce = web3.eth.getTransactionCount(network_manager.accounts[0].address)
         if pending_queue_is_full():
             log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
             aws_put_metric_heart_beat(1)
@@ -363,13 +361,15 @@ class PriceFeederTaskBase(TasksManager):
         # Multiply factor of the using gas price
         calculated_gas_price = using_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
         # is a price re post
-        if last_used_nonce:
+        if 'receipt' in pending_tx_receipt and re_post:
+            if 'last_used_nonce' in global_manager:
+                last_used_nonce = decimal.Decimal(global_manager['last_used_nonce'])
             if 'last_gas_price' in global_manager:
-                calculated_gas_price = decimal.Decimal(global_manager['last_gas_price']) + 1
+                calculated_gas_price = decimal.Decimal(global_manager['last_gas_price']) + Web3.fromWei(1, 'ether')
             log.info(" Replacing tx price "
-                 "New gas price: [{0:.6f}] "
+                 "New gas price: [{0:.18f}] "
                  "Nonce: [{1}] ".format(
-            calculated_gas_price * 10 ** 18,
+            calculated_gas_price,
             last_used_nonce,
             ))
         
@@ -378,7 +378,7 @@ class PriceFeederTaskBase(TasksManager):
             gas_limit=gas_limit,
             gas_price=calculated_gas_price * 10 ** 18,
             required_confs=0,
-            nonce=last_used_nonce
+            nonce=last_used_nonce # if None, it will be automatically calculated
         )
 
         # expiration block required the price feeder
@@ -408,6 +408,9 @@ class PriceFeederTaskBase(TasksManager):
 
         # save the last gas price to re post price
         global_manager['last_gas_price'] = calculated_gas_price
+
+        # save the last used nonce
+        global_manager['last_used_nonce'] = web3.eth.getTransactionCount(network_manager.accounts[0].address)
 
         # save the last price to compare
         global_manager['last_price'] = price_no_precision
@@ -471,8 +474,14 @@ class PriceFeederTaskBase(TasksManager):
         # Accepted variation to write to blockchain
         is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
 
+        # calculate the price variation from the last price published
+        if last_price != 0:
+            last_price_variation = abs((price_no_precision / last_price) - 1)
+        else:
+            last_price_variation = decimal.Decimal(0)
+
         # Accepted variation to re write to blockchain
-        re_post_is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_re_write_blockchain)
+        re_post_is_in_range = last_price_variation >= decimal.Decimal(price_variation_re_write_blockchain)
 
         td_delta = now - last_price_timestamp
 
@@ -487,7 +496,8 @@ class PriceFeederTaskBase(TasksManager):
                  "Is in re post range: [{5}] "
                  "Is in time: [{6}] "
                  "Variation: [{7:.6}%] "
-                 "Last write ago: [{8}]".format(
+                 "Last price variation: [{8:.6}%] "
+                 "Last write ago: [{9}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
@@ -496,6 +506,7 @@ class PriceFeederTaskBase(TasksManager):
             re_post_is_in_range,
             is_in_time,
             price_variation_oracle * 100,
+            last_price_variation * 100,
             td_delta.seconds))
 
         # IF is in range or not in range but is in time
@@ -741,8 +752,14 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # Accepted variation to write to blockchain
         is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
 
+        # calculate the price variation from the last price published
+        if last_price != 0:
+            last_price_variation = abs((price_no_precision / last_price) - 1)
+        else:
+            last_price_variation = decimal.Decimal(0)
+
         # Accepted variation to re write to blockchain
-        re_post_is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_re_write_blockchain)
+        re_post_is_in_range = last_price_variation >= decimal.Decimal(price_variation_re_write_blockchain)
 
         td_delta = now - last_price_timestamp
 
@@ -757,8 +774,9 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                  "Is in re post range: [{5}] "
                  "Is in time: [{6}] "
                  "Variation: [{7:.6}%] "
-                 "Floor: [{8:.6}] "
-                 "Last write ago: [{9}]".format(
+                 "Last price variation: [{8:.6}%] "
+                 "Floor: [{9:.6}] "
+                 "Last write ago: [{10}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
@@ -767,6 +785,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
             re_post_is_in_range,
             is_in_time,
             price_variation_oracle*100,
+            last_price_variation*100,
             price_floor,
             td_delta.seconds))
 
