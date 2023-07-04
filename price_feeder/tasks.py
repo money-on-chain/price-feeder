@@ -33,7 +33,7 @@ def pending_queue_is_full(account_index=0):
     last_used_nonce = web3.eth.getTransactionCount(account_address)
 
     # A limit of pending on blockchain
-    if nonce >= last_used_nonce + 1:
+    if nonce >= last_used_nonce + 2:
         log.info('Cannot create more transactions for {} as the node queue will be full. Nonce: [{}] '
                  'Last used Nonce: [{}]'.format(
                   account_address, nonce, last_used_nonce))
@@ -326,16 +326,22 @@ class PriceFeederTaskBase(TasksManager):
 
         return result
 
-    def post_price(self, price_no_precision, info_contracts, re_post, task=None, global_manager=None):
-
+    def post_price(self, price_no_precision, info_contracts, post, re_post, task=None, global_manager=None):
         # Not call until tx confirmed!
         pending_tx_receipt = pending_transaction_receipt(task)
         last_used_nonce = None
-        if 'receipt' in pending_tx_receipt and not re_post:
-            if not pending_tx_receipt['receipt']['confirmed'] or pending_tx_receipt['receipt']['reverted']:
+        if 'receipt' in pending_tx_receipt:
+            if (not pending_tx_receipt['receipt']['confirmed'] and not re_post) or pending_tx_receipt['receipt']['reverted']:
                 # Continue on pending status or reverted
                 return pending_tx_receipt
-        if pending_queue_is_full():
+        # there is not a post condition, there is a re post condition but no a tx to replace, so return
+        if not 'receipt' in pending_tx_receipt and not post and re_post:
+            return
+        # there is a post condition, we avoid to make a re post from and old tx
+        if not 'receipt' in pending_tx_receipt and post and re_post:
+            re_post = False
+        # the tx queue is full and there is not a re post condition, so return
+        if pending_queue_is_full() and not re_post:
             log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
             aws_put_metric_heart_beat(1)
             return
@@ -361,18 +367,39 @@ class PriceFeederTaskBase(TasksManager):
         # Multiply factor of the using gas price
         calculated_gas_price = using_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
         # is a price re post
-        if 'receipt' in pending_tx_receipt and re_post:
-            if 'last_used_nonce' in global_manager:
-                last_used_nonce = decimal.Decimal(global_manager['last_used_nonce'])
-            if 'last_gas_price' in global_manager:
-                calculated_gas_price = decimal.Decimal(global_manager['last_gas_price']) + Web3.fromWei(1, 'ether')
-            log.info(" Replacing tx price "
-                 "New gas price: [{0:.18f}] "
-                 "Nonce: [{1}] ".format(
-            calculated_gas_price,
-            last_used_nonce,
-            ))
-        
+        if 'receipt' in pending_tx_receipt:
+            tx_rcp = None
+            # there is a pending tx and a re post condition, we try to re post the tx
+            if not pending_tx_receipt['receipt']['confirmed'] and re_post:
+                # node just start and doesn't have previous information
+                if not ('tx0' in global_manager and 'last_used_nonce' in global_manager and 'last_gas_price' in global_manager): return
+                # we need to check if the previous tx, the one that we want to replace in first place,
+                # is not already mined. If we replaced a tx, but the previous one was mined at the same time
+                # the new one stay pending forever and will be tried to be replaced always.
+                # for example,
+                # post condition -> create tx0 with nonce 100 = pending
+                # re post condition -> create tx1 with nonce 100 = pending  ----> at the same time, tx0 nonce 100 = confirmed
+                # re post condition -> tx2 with nonce 100 is not created because tx0 is confirmed, so return
+                # without this check, tx2 will be created because is reading tx1 pending condition but will always revert 
+                # because tx0 is already confirmed with the same nonce 100
+                try:
+                    tx_rcp = chain.get_transaction(global_manager['tx0'])
+                # if the tx0 is not found return just in case
+                except exceptions.TransactionNotFound:
+                    return
+                # check if the tx0 is mined, if it is return
+                if tx_rcp.nonce == global_manager['last_used_nonce'] and tx_rcp.confirmations >= 1: 
+                    return       
+                last_used_nonce = global_manager['last_used_nonce']
+                calculated_gas_price = decimal.Decimal(global_manager['last_gas_price']) + decimal.Decimal(Web3.fromWei(self.options['networks'][self.config_network]['re_post_gas_price_increment'], 'ether'))
+
+                                
+                log.info(" Replacing tx price "
+                    "New gas price: [{0:.18f}] "
+                    "Nonce: [{1}] ".format(
+                calculated_gas_price,
+                last_used_nonce,
+                ))
         # arguments to pass to tx
         tx_args = info_contracts['price_feed'].tx_arguments(
             gas_limit=gas_limit,
@@ -405,6 +432,11 @@ class PriceFeederTaskBase(TasksManager):
             int(expiration),
             Web3.toChecksumAddress(address_medianizer),
             tx_args)
+
+        if 'last_tx' in global_manager:
+            global_manager['tx0'] = global_manager['last_tx']
+        # save the last gas price to re post price
+        global_manager['last_tx'] = tx_receipt.txid
 
         # save the last gas price to re post price
         global_manager['last_gas_price'] = calculated_gas_price
@@ -510,11 +542,12 @@ class PriceFeederTaskBase(TasksManager):
             td_delta.seconds))
 
         # IF is in range or not in range but is in time
-        if re_post_is_in_range or is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
-
+        is_post = is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity
+        is_re_post = re_post_is_in_range
+        if is_re_post or is_post:
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, re_post_is_in_range, task=task, global_manager=global_manager)
+                result = self.post_price(price_no_precision, info_contracts, is_post, is_re_post, task=task, global_manager=global_manager)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
@@ -790,11 +823,12 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
             td_delta.seconds))
 
         # IF is in range or not in range but is in time
-        if re_post_is_in_range or is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
-
+        is_post = is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity
+        is_re_post = re_post_is_in_range
+        if is_re_post or is_post:
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, re_post_is_in_range, task=task, global_manager=global_manager)
+                result = self.post_price(price_no_precision, info_contracts, is_post, is_re_post, task=task, global_manager=global_manager)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
