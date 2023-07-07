@@ -374,7 +374,7 @@ class PriceFeederTaskBase(TasksManager):
         if re_post_is_in_range and not pending_tx_receipt['receipt']['confirmed']:
             tx_rcp = None
             # node just start and doesn't have previous information
-            if not ('tx0' in global_manager and 'last_used_nonce' in global_manager and 'last_gas_price' in global_manager): return
+            if not ('tx0' in global_manager and 'last_used_nonce' in global_manager): return
             # we need to check if the previous tx, the one that we want to replace in first place,
             # is not already mined. If we replaced a tx, but the previous one was mined at the same time
             # the new one stay pending forever and will be tried to be replaced always.
@@ -393,7 +393,7 @@ class PriceFeederTaskBase(TasksManager):
             if not tx_rcp or (tx_rcp.nonce == global_manager['last_used_nonce'] and tx_rcp.confirmations >= 1): 
                 return       
             last_used_nonce = global_manager['last_used_nonce']
-            calculated_gas_price = decimal.Decimal(global_manager['last_gas_price']) + decimal.Decimal(Web3.fromWei(network_options['re_post_gas_price_increment'], 'ether'))
+            calculated_gas_price = Web3.fromWei(tx_rcp.gas_price, 'ether') + decimal.Decimal(Web3.fromWei(network_options['re_post_gas_price_increment'], 'ether'))
 
                             
             log.info(" Replacing tx price "
@@ -445,9 +445,6 @@ class PriceFeederTaskBase(TasksManager):
             global_manager['tx0'] = tx_receipt.txid
         # save the last tx
         global_manager['last_tx'] = tx_receipt.txid
-
-        # save the last gas price to re post price
-        global_manager['last_gas_price'] = calculated_gas_price
 
         # save the last used nonce
         global_manager['last_used_nonce'] = web3.eth.getTransactionCount(network_manager.accounts[0].address)
