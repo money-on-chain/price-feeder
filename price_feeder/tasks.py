@@ -384,14 +384,19 @@ class PriceFeederTaskBase(TasksManager):
             # re post condition -> tx2 with nonce 100 is not created because tx0 is confirmed, so return
             # without this check, tx2 will be created because is reading tx1 pending condition but will always revert
             # because tx0 is already confirmed with the same nonce 100
+            # In the case that tx0 is confirmed after tx1 has been catch by nodes, tx1 will be left pending and another re post cannot be done
+            # this condition will cause a node reject because the nonce is incorrect and will be amend when another post price arrives
             try:
                 tx_rcp = chain.get_transaction(global_manager['tx0'])
             # if the tx0 is not found return just in case
             except exceptions.TransactionNotFound:
                 return
             # return if tx0 is already confirmed
-            if not tx_rcp or (tx_rcp.nonce == global_manager['last_used_nonce'] and tx_rcp.confirmations >= 1): 
-                return       
+            if not tx_rcp or tx_rcp.confirmations >= 1: 
+                return
+            # If the same wallet is used to send txs other than the post price,
+            # the nonce used for tx replacement will always be smaller and the node will reject them 
+            # until there is a new post price and it is automatically recalculated      
             last_used_nonce = global_manager['last_used_nonce']
             calculated_gas_price = Web3.fromWei(tx_rcp.gas_price, 'ether') + decimal.Decimal(Web3.fromWei(network_options['re_post_gas_price_increment'], 'ether'))
 
