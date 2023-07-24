@@ -8,7 +8,7 @@ from moneyonchain.networks import network_manager, web3, chain
 from moneyonchain.rdoc import RDOCMoCState
 from moneyonchain.medianizer import MoCMedianizer, PriceFeed
 
-from moc_prices_source import get_price, BTC_USD, RIF_USD, ETH_BTC, USDT_USD, BNB_USDT
+from moc_prices_source import get_price, BTC_USD, RIF_USD_B, RIF_USD_T, RIF_USD_TB, RIF_USD_WMTB, RIF_USDT, ETH_BTC, USDT_USD, BNB_USDT
 
 from .tasks_manager import TasksManager
 from .logger import log
@@ -189,7 +189,7 @@ class PriceFeederTaskBase(TasksManager):
         self.connection_network = connection_net
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
-
+        
         try:
             self.min_prices_source = self.options['networks'][self.config_network]['min_prices_source']
         except KeyError:
@@ -219,16 +219,20 @@ class PriceFeederTaskBase(TasksManager):
 
         self.app_mode = self.options['networks'][self.config_network]['app_mode']
 
+        # simulation don't write to blockchain
+        self.is_simulation = False
+        if 'is_simulation' in self.options:
+            self.is_simulation = self.options['is_simulation']
+
+        self.pair_option = False
+        if 'pair_option' in self.options:
+            self.pair_option = self.options['pair_option']
+
         log.info("Starting with MoC Medianizer: {}".format(address_medianizer))
         log.info("Starting with PriceFeed: {}".format(address_pricefeed))
         log.info("Starting with App Mode: {}".format(self.app_mode))
         log.info("Using CoinPair: {}".format(self.coinpair()))
         self.price_from_sources()
-
-        # simulation don't write to blockchain
-        self.is_simulation = False
-        if 'is_simulation' in self.options:
-            self.is_simulation = self.options['is_simulation']
 
         # connect
         self.connect()
@@ -247,18 +251,40 @@ class PriceFeederTaskBase(TasksManager):
     def coinpair(self):
         """ Get coinpair from app Mode"""
 
-        if self.app_mode == 'MoC':
-            return BTC_USD
-        elif self.app_mode == 'RIF':
-            return RIF_USD
-        elif self.app_mode == 'ETH':
-            return ETH_BTC
-        elif self.app_mode == 'USDT':
-            return USDT_USD
-        elif self.app_mode == 'BNB':
-            return BNB_USDT
+        if self.pair_option is False:
+            if self.app_mode == 'MoC':
+                return BTC_USD
+            elif self.app_mode == 'RIF':
+                return RIF_USD_B
+            elif self.app_mode == 'ETH':
+                return ETH_BTC
+            elif self.app_mode == 'USDT':
+                return USDT_USD
+            elif self.app_mode == 'BNB':
+                return BNB_USDT
+            else:
+                raise Exception("App mode not recognize!")
         else:
-            raise Exception("App mode not recognize!")
+            if self.pair_option == 'BTC_USD':
+                return BTC_USD
+            elif self.pair_option == 'RIF_USD_B':
+                return RIF_USD_B
+            elif self.pair_option == 'RIF_USD_T':
+                return RIF_USD_T
+            elif self.pair_option == 'RIF_USD_TB':
+                return RIF_USD_TB
+            elif self.pair_option == 'RIF_USD_WMTB':
+                return RIF_USD_WMTB
+            elif self.pair_option == 'RIF_USDT':
+                return RIF_USDT
+            elif self.pair_option == 'ETH_BTC':
+                return ETH_BTC
+            elif self.pair_option == 'USDT_USD':
+                return USDT_USD
+            elif self.pair_option == 'BNB_USDT':
+                return BNB_USDT
+            else:
+                raise Exception("Ppair option not recognize!")
 
     def contracts(self):
         """Get contracts from blockchain"""
@@ -278,12 +304,16 @@ class PriceFeederTaskBase(TasksManager):
     def log_info_from_sources(detail):
 
         table = []
+
+        if detail['values']:
+            for k, v in detail['values'].items():
+                howto = 'computed for' if 'requirements' in v and v['requirements'] else 'obtained from'
+                log.info("Value {} the pair {}: {}".format(howto, k, v['weighted_median_price']))
+
         if detail['prices']:
-            count = 0
             for price_source in detail['prices']:
-                count += 1
                 row = list()
-                row.append(count)
+                row.append(price_source['coinpair'])
                 row.append(price_source['description'])
                 row.append(price_source['price'])
                 row.append(price_source['weighing'])
@@ -292,11 +322,13 @@ class PriceFeederTaskBase(TasksManager):
                 row.append(price_source['ok'])
                 row.append(price_source['last_change_timestamp'])
                 table.append(row)
+
         if table:
-            table.sort(key=lambda x: str(x[3]), reverse=True)
-            log.info("\n{}".format(tabulate(table, headers=[
-                '', 'Description', 'Price', 'Weighting', '% Weighting', 'Age', 'Ok', 'Last Change'
+            table.sort(key=lambda x: str((x[0], x[4])), reverse=True)
+            log.debug("\n{}".format(tabulate(table, headers=[
+                'Coinpair', 'Description', 'Price', 'Weighting', '% Weighting', 'Age', 'Ok', 'Last Change'
             ])))
+
         else:
             log.warn("No info from source!")
 
@@ -323,6 +355,8 @@ class PriceFeederTaskBase(TasksManager):
         except Exception as e:
             log.error(e, exc_info=True)
             result = None
+
+        log.info("Finally the value {} is used for the {} pair".format(result, self.coinpair()))
 
         return result
 
