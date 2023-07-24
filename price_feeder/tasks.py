@@ -224,7 +224,7 @@ class PriceFeederTaskBase(TasksManager):
         if 'is_simulation' in self.options:
             self.is_simulation = self.options['is_simulation']
 
-        self.pair_option = False
+        self.pair_option = None
         if 'pair_option' in self.options:
             self.pair_option = self.options['pair_option']
 
@@ -251,7 +251,7 @@ class PriceFeederTaskBase(TasksManager):
     def coinpair(self):
         """ Get coinpair from app Mode"""
 
-        if self.pair_option is False:
+        if self.pair_option is None:
             if self.app_mode == 'MoC':
                 return BTC_USD
             elif self.app_mode == 'RIF':
@@ -284,7 +284,7 @@ class PriceFeederTaskBase(TasksManager):
             elif self.pair_option == 'BNB_USDT':
                 return BNB_USDT
             else:
-                raise Exception("Ppair option not recognize!")
+                raise Exception("Pair option not recognize!")
 
     def contracts(self):
         """Get contracts from blockchain"""
