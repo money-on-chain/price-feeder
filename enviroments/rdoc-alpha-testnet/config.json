@@ -6,6 +6,7 @@
   "gas_price": 65820000,
   "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
+  "pair_option": "RIF_USDT",
   "gas_limit": 200000,
   "networks": {
     "rdocTestnetAlpha": {
