@@ -372,35 +372,15 @@ class PriceFeederTaskBase(TasksManager):
         calculated_gas_price = using_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
         # is a price re post and there is a pending tx, we try to re post the tx
         if re_post_is_in_range and not pending_tx_receipt['receipt']['confirmed']:
-            tx_rcp = None
-            # node just start and doesn't have previous information
-            if not ('tx0' in global_manager and 'last_used_nonce' in global_manager): return
-            # we need to check if the previous tx, the one that we want to replace in first place,
-            # is not already mined. If we replaced a tx, but the previous one was mined at the same time
-            # the new one stay pending forever and will be tried to be replaced always.
-            # for example,
-            # post condition -> create tx0 with nonce 100 = pending
-            # re post condition -> create tx1 with nonce 100 = pending  ----> at the same time, tx0 nonce 100 = confirmed
-            # re post condition -> tx2 with nonce 100 is not created because tx0 is confirmed, so return
-            # without this check, tx2 will be created because is reading tx1 pending condition but will always revert
-            # because tx0 is already confirmed with the same nonce 100
-            # In the case that tx0 is confirmed after tx1 has been catch by nodes, tx1 will be left pending and another re post cannot be done
-            # this condition will cause a node reject because the nonce is incorrect and will be amend when another post price arrives
-            try:
-                tx_rcp = chain.get_transaction(global_manager['tx0'])
-            # if the tx0 is not found return just in case
-            except exceptions.TransactionNotFound:
-                return
-            # return if tx0 is already confirmed
-            if not tx_rcp or tx_rcp.confirmations >= 1: 
-                return
-            # If the same wallet is used to send txs other than the post price,
-            # the nonce used for tx replacement will always be smaller and the node will reject them 
-            # until there is a new post price and it is automatically recalculated      
-            last_used_nonce = global_manager['last_used_nonce']
-            calculated_gas_price = Web3.fromWei(tx_rcp.gas_price, 'ether') + decimal.Decimal(Web3.fromWei(network_options['re_post_gas_price_increment'], 'ether'))
-
-                            
+            pending_tx = chain.get_transaction(task.tx_receipt)
+            actual_nonce = web3.eth.getTransactionCount(network_manager.accounts[0].address)
+            last_used_nonce = pending_tx.nonce
+            # if any of the pending txs was mined the nonce increased and no other re post can be done 
+            # return without saving new tx receipt, so new post can be executed
+            # we are assuming that the wallet running this script is not used for others txs or the
+            # probably that that happen during a re post is very low. In any case, a post always will succeed
+            if(actual_nonce > last_used_nonce): return
+            calculated_gas_price = Web3.fromWei(pending_tx.gas_price, 'ether') * decimal.Decimal(network_options['re_post_gas_price_increment'])
             log.info(" Replacing tx price "
                 "New gas price: [{0:.18f}] "
                 "Nonce: [{1}] ".format(
@@ -439,20 +419,6 @@ class PriceFeederTaskBase(TasksManager):
             int(expiration),
             Web3.toChecksumAddress(address_medianizer),
             tx_args)
-
-        # tx0 is the tx that we will try to replace, 
-        # last_tx is the tx that we are sending to re post but is used only as a buffer
-        # to could move it to tx0 if there is another re post for the same nonce.
-        # for each new re post operation we need to check that tx0 is not already confirmed
-        if 'last_tx' in global_manager:
-            global_manager['tx0'] = global_manager['last_tx']
-        else: 
-            global_manager['tx0'] = tx_receipt.txid
-        # save the last tx
-        global_manager['last_tx'] = tx_receipt.txid
-
-        # save the last used nonce
-        global_manager['last_used_nonce'] = web3.eth.getTransactionCount(network_manager.accounts[0].address)
 
         # save the last price to compare
         global_manager['last_price'] = price_no_precision
