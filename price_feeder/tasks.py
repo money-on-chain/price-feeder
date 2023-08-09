@@ -360,28 +360,38 @@ class PriceFeederTaskBase(TasksManager):
 
         return result
 
-    def post_price(self, price_no_precision, info_contracts, task=None, global_manager=None):
-
+    def post_price(self, price_no_precision, info_contracts, post, re_post_is_in_range, task=None, global_manager=None):
         # Not call until tx confirmed!
         pending_tx_receipt = pending_transaction_receipt(task)
+        last_used_nonce = None
+        # Check if the receipt exists in the pending transaction
         if 'receipt' in pending_tx_receipt:
-            if not pending_tx_receipt['receipt']['confirmed'] or pending_tx_receipt['receipt']['reverted']:
-                # Continue on pending status or reverted
+            # Continue on pending status or reverted
+            if (not pending_tx_receipt['receipt']['confirmed'] and not re_post_is_in_range) or pending_tx_receipt['receipt']['reverted']:
                 return pending_tx_receipt
+        # No receipt in the pending transaction
+        else:
+            # There is no post condition, and no tx to replace, just return
+            if not post:
+                return
+            # No tx to replace, so cannot be a re_post
+            re_post_is_in_range = False  
 
-        if pending_queue_is_full():
+        # the tx queue is full and there is not a re post condition, so return
+        if not re_post_is_in_range and pending_queue_is_full():
             log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
             aws_put_metric_heart_beat(1)
             return
 
+        network_options = self.options['networks'][self.config_network]
         # set the maximum gas limit
         gas_limit = self.options['gas_limit']
 
         # max time in seconds that price is valid
-        block_expiration = self.options['networks'][self.config_network]['block_expiration']
+        block_expiration = network_options['block_expiration']
 
         # get the medianizer address from options
-        address_medianizer = self.options['networks'][self.config_network]['addresses']['MoCMedianizer']
+        address_medianizer = network_options['addresses']['MoCMedianizer']
 
         # get gas price from node
         node_gas_price = decimal.Decimal(Web3.fromWei(web3.eth.gas_price, 'ether'))
@@ -394,12 +404,29 @@ class PriceFeederTaskBase(TasksManager):
 
         # Multiply factor of the using gas price
         calculated_gas_price = using_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
-
+        # is a price re post and there is a pending tx, we try to re post the tx
+        if re_post_is_in_range and not pending_tx_receipt['receipt']['confirmed']:
+            pending_tx = chain.get_transaction(task.tx_receipt)
+            actual_nonce = web3.eth.getTransactionCount(network_manager.accounts[0].address)
+            last_used_nonce = pending_tx.nonce
+            # if any of the pending txs was mined the nonce increased and no other re post can be done 
+            # return without saving new tx receipt, so new post can be executed
+            # we are assuming that the wallet running this script is not used for others txs or the
+            # probably that that happen during a re post is very low. In any case, a post always will succeed
+            if(actual_nonce > last_used_nonce): return
+            calculated_gas_price = Web3.fromWei(pending_tx.gas_price, 'ether') * decimal.Decimal(network_options['re_post_gas_price_increment'])
+            log.info(" Replacing tx price "
+                "New gas price: [{0:.18f}] "
+                "Nonce: [{1}] ".format(
+            calculated_gas_price,
+            last_used_nonce,
+            ))
         # arguments to pass to tx
         tx_args = info_contracts['price_feed'].tx_arguments(
             gas_limit=gas_limit,
             gas_price=calculated_gas_price * 10 ** 18,
-            required_confs=0
+            required_confs=0,
+            nonce=last_used_nonce # if None, it will be automatically calculated
         )
 
         # expiration block required the price feeder
@@ -436,17 +463,20 @@ class PriceFeederTaskBase(TasksManager):
         return save_pending_tx_receipt(tx_receipt, task.task_name)
 
     def task_price_feed(self, task=None, global_manager=None):
-
         result = dict()
 
         # now
         now = datetime.datetime.now()
 
+        network_options = self.options['networks'][self.config_network]
         # price variation accepted
-        price_variation_write_blockchain = self.options['networks'][self.config_network]['price_variation_write_blockchain']
+        price_variation_write_blockchain = network_options['price_variation_write_blockchain']
+
+        # re post price variation accepted
+        price_variation_re_write_blockchain = network_options['price_variation_re_write_blockchain']
 
         # max time in seconds that price is valid
-        block_expiration = self.options['networks'][self.config_network]['block_expiration']
+        block_expiration = network_options['block_expiration']
 
         timeout_in_time = abs(block_expiration - MAX_PENDING_BLOCK_TIME)
 
@@ -486,6 +516,15 @@ class PriceFeederTaskBase(TasksManager):
         # Accepted variation to write to blockchain
         is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
 
+        # calculate the price variation from the last price published
+        if last_price != 0:
+            last_price_variation = abs((price_no_precision / last_price) - 1)
+        else:
+            last_price_variation = decimal.Decimal(0)
+
+        # Accepted variation to re write to blockchain
+        re_post_is_in_range = last_price_variation >= decimal.Decimal(price_variation_re_write_blockchain)
+
         td_delta = now - last_price_timestamp
 
         # is more than 5 minutes from the last write
@@ -496,24 +535,28 @@ class PriceFeederTaskBase(TasksManager):
                  "Last: [{2:.6f}] "
                  "New: [{3:.6f}] "
                  "Is in range: [{4}] "
-                 "Is in time: [{5}] "
-                 "Variation: [{6:.6}%] "
-                 "Last write ago: [{7}]".format(
+                 "Is in re post range: [{5}] "
+                 "Is in time: [{6}] "
+                 "Variation: [{7:.6}%] "
+                 "Last price variation: [{8:.6}%] "
+                 "Last write ago: [{9}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
             price_no_precision,
             is_in_range,
+            re_post_is_in_range,
             is_in_time,
             price_variation_oracle * 100,
+            last_price_variation * 100,
             td_delta.seconds))
 
         # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
-
+        is_post = is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity
+        if is_post or re_post_is_in_range:
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, task=task, global_manager=global_manager)
+                result = self.post_price(price_no_precision, info_contracts, is_post, re_post_is_in_range, task=task, global_manager=global_manager)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
@@ -694,11 +737,15 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # now
         now = datetime.datetime.now()
 
+        network_options = self.options['networks'][self.config_network]
         # price variation accepted
-        price_variation_write_blockchain = self.options['networks'][self.config_network]['price_variation_write_blockchain']
+        price_variation_write_blockchain = network_options['price_variation_write_blockchain']
+
+        # re post price variation accepted
+        price_variation_re_write_blockchain = network_options['price_variation_re_write_blockchain']
 
         # max time in seconds that price is valid
-        block_expiration = self.options['networks'][self.config_network]['block_expiration']
+        block_expiration = network_options['block_expiration']
 
         timeout_in_time = abs(block_expiration - MAX_PENDING_BLOCK_TIME)
 
@@ -748,6 +795,15 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # Accepted variation to write to blockchain
         is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
 
+        # calculate the price variation from the last price published
+        if last_price != 0:
+            last_price_variation = abs((price_no_precision / last_price) - 1)
+        else:
+            last_price_variation = decimal.Decimal(0)
+
+        # Accepted variation to re write to blockchain
+        re_post_is_in_range = last_price_variation >= decimal.Decimal(price_variation_re_write_blockchain)
+
         td_delta = now - last_price_timestamp
 
         # is more than 5 minutes from the last write
@@ -758,26 +814,30 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                  "Last: [{2:.6f}] "
                  "New: [{3:.6f}] "
                  "Is in range: [{4}] "
-                 "Is in time: [{5}] "
-                 "Variation: [{6:.6}%] "
-                 "Floor: [{7:.6}] "
-                 "Last write ago: [{8}]".format(
+                 "Is in re post range: [{5}] "
+                 "Is in time: [{6}] "
+                 "Variation: [{7:.6}%] "
+                 "Last price variation: [{8:.6}%] "
+                 "Floor: [{9:.6}] "
+                 "Last write ago: [{10}]".format(
             task.task_name,
             last_price_oracle,
             last_price,
             price_no_precision,
             is_in_range,
+            re_post_is_in_range,
             is_in_time,
             price_variation_oracle*100,
+            last_price_variation*100,
             price_floor,
             td_delta.seconds))
 
         # IF is in range or not in range but is in time
-        if is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity:
-
+        is_post = is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity
+        if is_post or re_post_is_in_range:
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, task=task, global_manager=global_manager)
+                result = self.post_price(price_no_precision, info_contracts, is_post, re_post_is_in_range, task=task, global_manager=global_manager)
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
