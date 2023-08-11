@@ -1,7 +1,7 @@
 {
   "backup_mode": false,
   "backup_writes": 100,
-  "interval": 25,
+  "interval": 1,
   "timeout": 180,
   "gas_price": 65820000,
   "gas_price_multiply_factor": 1.0001,
@@ -13,6 +13,8 @@
       "app_mode": "RIF",
       "block_expiration": 600,
       "price_variation_write_blockchain": 0.001,
+      "price_variation_re_write_blockchain": 0.0001,
+      "re_post_gas_price_increment": 1.4,
       "min_prices_source": 1,
       "addresses": {
         "MoCState": "0xB80C23576053A1a5278C1a43DC8471F432f77245",
