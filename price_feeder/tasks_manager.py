@@ -117,7 +117,6 @@ class TasksManager:
                     if self.tasks:
                         for key in self.tasks:
                             self.schedule_task(pool, self.tasks[key], global_manager=global_manager)
-                    sleep(1)
             except TerminateSignal:
                 log.info("Terminal Signal received... Going to shutdown... stop pooling now!")
                 #pool.stop()
