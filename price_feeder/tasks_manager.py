@@ -44,6 +44,7 @@ class Task:
         self.last_run = datetime.datetime.now()
         self.tx_receipt = None
         self.tx_receipt_timestamp = None
+        self.pending_transactions = None
         self.task_name = task_name
 
 
@@ -71,10 +72,25 @@ class TasksManager:
                 if 'shutdown' in task.result:
                     if task.result['shutdown']:
                         task.shutdown = True
+                elif 'pending_transactions' in task.result:
+                    task.pending_transactions = task.result['pending_transactions']
                 elif 'receipt' in task.result:
                     if 'id' in task.result['receipt']:
                         task.tx_receipt = task.result['receipt']['id']
                         task.tx_receipt_timestamp = task.result['receipt']['timestamp']
+                        task.is_replacement = task.result['receipt'].get('is_replacement', False)
+                        task.price_oracle = task.result['receipt'].get('price_oracle', '')
+                        task.price_last_time = task.result['receipt'].get('price_last_time', '')
+                        task.price_new = task.result['receipt'].get('price_new', '')
+                        task.variation_oracle = task.result['receipt'].get('variation_oracle', '')
+                        task.variation_last_time = task.result['receipt'].get('variation_last_time', '')
+                        task.gas_price = task.result['receipt'].get('gas_price', '')
+                        task.gas_price_replacement = task.result['receipt'].get('gas_price_replacement', '')
+                        task.nonce = task.result['receipt'].get('nonce', '')
+                        task.nonce_replacement = task.result['receipt'].get('nonce_replacement', '')
+
+
+
         except TimeoutError as e:
             log.info("Function took longer than %d seconds. Task going to cancel!" % e.args[1])
             aws_put_metric_heart_beat(1)

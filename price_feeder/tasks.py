@@ -1,4 +1,5 @@
 import datetime
+import random
 
 from web3 import Web3, exceptions
 import decimal
@@ -15,7 +16,7 @@ from .logger import log
 from .utils import aws_put_metric_heart_beat
 
 
-__VERSION__ = '2.1.14'
+__VERSION__ = '2.1.15'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -42,7 +43,14 @@ def pending_queue_is_full(account_index=0):
     return False
 
 
-def save_pending_tx_receipt(tx_receipt, task_name):
+def save_pending_tx_receipt(
+        tx_receipt,
+        task_name,
+        is_replacement=False,
+        gas_price=None,
+        gas_price_replacement=None,
+        nonce=None,
+        nonce_replacement=None):
     """ Tx receipt """
 
     result = dict()
@@ -56,7 +64,28 @@ def save_pending_tx_receipt(tx_receipt, task_name):
     result['receipt']['id'] = tx_receipt.txid
     result['receipt']['timestamp'] = datetime.datetime.now()
 
-    log.info("Task :: {0} :: Sending tx: {1}".format(task_name, tx_receipt.txid))
+    # replacement tx info
+    result['receipt']['is_replacement'] = is_replacement
+    result['receipt']['gas_price'] = gas_price
+    result['receipt']['gas_price_replacement'] = gas_price_replacement
+    result['receipt']['nonce'] = nonce
+    result['receipt']['nonce_replacement'] = nonce_replacement
+
+    log.info("Task :: {0} :: Sending tx :: "
+             "Hash: [{1}] "
+             "Is Replacement: [{2}] "
+             "Gas Price: [{3}] "
+             "Gas Price Replacement: [{4}] "
+             "Nonce: [{5}] "
+             "Nonce Replacement: [{6}]".format(
+        task_name,
+              tx_receipt.txid,
+              result['receipt']['is_replacement'],
+              result['receipt']['gas_price'],
+              result['receipt']['gas_price_replacement'],
+              result['receipt']['nonce'],
+              result['receipt']['nonce_replacement']
+              ))
 
     return result
 
@@ -64,7 +93,10 @@ def save_pending_tx_receipt(tx_receipt, task_name):
 def pending_transaction_receipt(task):
     """ Wait to pending receipt get confirmed"""
 
-    timeout_reverted = 600
+    timeout_waiting = 180
+
+    log.info("IN>>>")
+    log.info(task.tx_receipt)
 
     result = dict()
     if task.tx_receipt:
@@ -74,6 +106,7 @@ def pending_transaction_receipt(task):
 
         try:
             tx_rcp = chain.get_transaction(task.tx_receipt)
+
         except exceptions.TransactionNotFound:
             # Transaction not exist anymore, blockchain reorder?
             # timeout and permit to send again transaction
@@ -85,6 +118,19 @@ def pending_transaction_receipt(task):
 
             return result
 
+        try:
+            web3.eth.getTransaction(task.tx_receipt)
+        except exceptions.TransactionNotFound:
+            # Transaction not exist anymore, blockchain reorder?
+            # timeout and permit to send again transaction
+            result['receipt']['id'] = None
+            result['receipt']['timestamp'] = None
+            result['receipt']['confirmed'] = True
+
+            log.error("Task :: {0} :: Transaction not found Web3! {1}".format(task.task_name, task.tx_receipt))
+
+            return result
+
         # pending state
         # Status:
         #    Dropped = -2
@@ -92,38 +138,79 @@ def pending_transaction_receipt(task):
         #    Reverted = 0
         #    Confirmed = 1
 
-        # confirmed state
-        if tx_rcp.confirmations >= 1 and tx_rcp.status == 1:
+        log.info("DEBUG:::")
+        log.info(tx_rcp)
+        log.info(tx_rcp.confirmations)
+        log.info(tx_rcp.status)
+
+        # Confirmed status
+        if tx_rcp.status == 1:
+
+            elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
+
+            if task.is_replacement:
+                action_label = 'Task :: {0} :: TX Replacement Confirmed.'.format(task.task_name)
+            else:
+                action_label = 'Task :: {0} :: TX Confirmed.'.format(task.task_name)
+
+            log.info(
+                "{0}"
+                " Hash: [{1}] "
+                " Price Oracle: [{2}] "
+                " Price Last Time: [{3}] "
+                " Price New: [{4}] "
+                " Variation Oracle: [{5}] "
+                " Variation Last Time: [{6}] "
+                " Gas Price: [{7}] "
+                " Gas Price Replacement: [{8}] "
+                " Nonce: [{9}] "
+                " Nonce Replacement: [{10}] "
+                " Elapsed: [{11}]".format(
+                    action_label,
+                    task.tx_receipt,
+                    task.price_oracle,
+                    task.price_last_time,
+                    task.price_new,
+                    task.variation_oracle,
+                    task.variation_last_time,
+                    task.gas_price,
+                    task.gas_price_replacement,
+                    task.nonce,
+                    task.nonce_replacement,
+                    elapsed.seconds
+                )
+            )
 
             result['receipt']['confirmed'] = True
             result['receipt']['id'] = None
             result['receipt']['timestamp'] = None
 
-            log.info("Task :: {0} :: Confirmed tx! [{1}]".format(task.task_name, task.tx_receipt))
+        # Reverted status
+        elif tx_rcp.status == 0:
 
-        # reverted
-        elif tx_rcp.confirmations >= 1 and tx_rcp.status == 0:
-
+            result['receipt']['id'] = None
+            result['receipt']['timestamp'] = None
             result['receipt']['confirmed'] = True
             result['receipt']['reverted'] = True
 
             elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
-            timeout = datetime.timedelta(seconds=timeout_reverted)
+            timeout = datetime.timedelta(seconds=timeout_waiting)
 
             log.error("Task :: {0} :: Reverted tx! [{1}] Elapsed: [{2}] Timeout: [{3}]".format(
-                task.task_name, task.tx_receipt, elapsed.seconds, timeout_reverted))
+                task.task_name, task.tx_receipt, elapsed.seconds, timeout_waiting))
 
-            if elapsed > timeout:
-                # timeout allow to send again transaction on reverted
-                result['receipt']['id'] = None
-                result['receipt']['timestamp'] = None
-                result['receipt']['confirmed'] = True
+            # if elapsed > timeout:
+            #     # timeout allow to send again transaction on reverted
+            #     result['receipt']['id'] = None
+            #     result['receipt']['timestamp'] = None
+            #     result['receipt']['confirmed'] = True
+            #
+            #     log.error("Task :: {0} :: Timeout Reverted tx! [{1}]".format(task.task_name, task.tx_receipt))
 
-                log.error("Task :: {0} :: Timeout Reverted tx! [{1}]".format(task.task_name, task.tx_receipt))
-
-        elif tx_rcp.confirmations < 1 and tx_rcp.status < 0:
+        # Pending status
+        elif tx_rcp.status == -1:
             elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
-            timeout = datetime.timedelta(seconds=task.timeout)
+            timeout = datetime.timedelta(seconds=timeout_waiting)
 
             if elapsed > timeout:
                 # timeout allow to send again transaction
@@ -133,9 +220,271 @@ def pending_transaction_receipt(task):
 
                 log.error("Task :: {0} :: Timeout tx! [{1}]".format(task.task_name, task.tx_receipt))
             else:
-                log.info("Task :: {0} :: Pending tx state ... [{1}]".format(task.task_name, task.tx_receipt))
+
+                if task.is_replacement:
+                    action_label = 'Task :: {0} :: TX Replacement Pending.'.format(task.task_name)
+                else:
+                    action_label = 'Task :: {0} :: TX Pending.'.format(task.task_name)
+
+                log.info(
+                    "{0}"
+                    " Hash: [{1}] "
+                    " Price Oracle: [{2}] "
+                    " Price Last Time: [{3}] "
+                    " Price New: [{4}] "
+                    " Variation Oracle: [{5}] "
+                    " Variation Last Time: [{6}] "
+                    " Gas Price: [{7}] "
+                    " Gas Price Replacement: [{8}] "
+                    " Nonce: [{9}] "
+                    " Nonce Replacement: [{10}] "
+                    " Elapsed: [{11}]".format(
+                        action_label,
+                        task.tx_receipt,
+                        task.price_oracle,
+                        task.price_last_time,
+                        task.price_new,
+                        task.variation_oracle,
+                        task.variation_last_time,
+                        task.gas_price,
+                        task.gas_price_replacement,
+                        task.nonce,
+                        task.nonce_replacement,
+                        elapsed.seconds
+                    )
+                )
+
+                #log.info("Task :: {0} :: Pending tx state ... [{1}]".format(task.task_name, task.tx_receipt))
+
+        # Dropped Status
+        elif tx_rcp.status == -2:
+            result['receipt']['id'] = None
+            result['receipt']['timestamp'] = None
+            result['receipt']['confirmed'] = True
+
+            #log.error("Task :: {0} :: Dropped tx! [{1}]".format(task.task_name, task.tx_receipt))
+
+            elapsed = datetime.datetime.now() - task.tx_receipt_timestamp
+
+            if task.is_replacement:
+                action_label = 'Task :: {0} :: TX Replacement Dropped.'.format(task.task_name)
+            else:
+                action_label = 'Task :: {0} :: TX Dropped.'.format(task.task_name)
+
+            log.info(
+                "{0}"
+                " Hash: [{1}] "
+                " Price Oracle: [{2}] "
+                " Price Last Time: [{3}] "
+                " Price New: [{4}] "
+                " Variation Oracle: [{5}] "
+                " Variation Last Time: [{6}] "
+                " Gas Price: [{7}] "
+                " Gas Price Replacement: [{8}] "
+                " Nonce: [{9}] "
+                " Nonce Replacement: [{10}] "
+                " Elapsed: [{11}]".format(
+                    action_label,
+                    task.tx_receipt,
+                    task.price_oracle,
+                    task.price_last_time,
+                    task.price_new,
+                    task.variation_oracle,
+                    task.variation_last_time,
+                    task.gas_price,
+                    task.gas_price_replacement,
+                    task.nonce,
+                    task.nonce_replacement,
+                    elapsed.seconds
+                )
+            )
+
+        else:
+            raise Exception("Not valid transaction status!")
 
     return result
+
+
+def pending_transactions(task):
+    """ Wait to pending receipt get confirmed"""
+
+    timeout_waiting = 180
+
+    if not task.pending_transactions:
+        task.pending_transactions = list()
+    else:
+
+        for tx in task.pending_transactions:
+            log.info("DEBUG 5>>>")
+            log.info(tx)
+
+            try:
+                web3.eth.getTransaction(tx['hash'])
+            except exceptions.TransactionNotFound:
+                # Transaction not exist anymore, blockchain reorder?
+                # timeout and permit to send again transaction
+                log.error("Task :: {0} :: Transaction not found Web3! {1}".format(task.task_name, tx['hash']))
+                task.pending_transactions.remove(tx)
+                continue
+
+            try:
+                w3_rcp = web3.eth.getTransactionReceipt(tx['hash'])
+            except exceptions.TransactionNotFound:
+                # Transaction not exist anymore, blockchain reorder?
+                # timeout and permit to send again transaction
+                w3_rcp = None
+
+            try:
+                tx_rcp = chain.get_transaction(tx['hash'])
+            except exceptions.TransactionNotFound:
+                # Transaction not exist anymore, blockchain reorder?
+                # timeout and permit to send again transaction
+
+                log.error("Task :: {0} :: Pending :: Transaction not found! {1}".format(task.task_name, tx['hash']))
+                task.pending_transactions.remove(tx)
+                continue
+
+
+            # pending state
+            # Status:
+            #    Dropped = -2
+            #    Pending = -1
+            #    Reverted = 0
+            #    Confirmed = 1
+
+            log.info("DEBUG:::")
+            log.info(tx_rcp)
+            log.info(tx_rcp.confirmations)
+            log.info(tx_rcp.status)
+            log.info(w3_rcp)
+
+            # Confirmed status
+            if tx_rcp.status == 1:
+
+                elapsed = datetime.datetime.now() - tx['timestamp']
+
+                if tx['is_replacement']:
+                    action_label = 'Task :: {0} :: TX Replacement Confirmed.'.format(task.task_name)
+                else:
+                    action_label = 'Task :: {0} :: TX Confirmed.'.format(task.task_name)
+
+                log.info(
+                    "{0}"
+                    " Hash: [{1}] "
+                    " Price Oracle: [{2}] "
+                    " Price Last Time: [{3}] "
+                    " Price New: [{4}] "
+                    " Variation Oracle: [{5}] "
+                    " Variation Last Time: [{6}] "
+                    " Gas Price: [{7}] "                    
+                    " Nonce: [{8}] "                    
+                    " Elapsed: [{9}]".format(
+                        action_label,
+                        tx['hash'],
+                        tx['price_oracle'],
+                        tx['price_last_time'],
+                        tx['price_new'],
+                        tx['variation_oracle'],
+                        tx['variation_last_time'],
+                        Web3.toWei(tx['gas_price'], 'ether'),
+                        tx['nonce'],
+                        elapsed.seconds
+                    )
+                )
+
+                task.pending_transactions.remove(tx)
+
+            # Reverted status
+            elif tx_rcp.status == 0:
+
+                elapsed = datetime.datetime.now() - tx['timestamp']
+                timeout = datetime.timedelta(seconds=timeout_waiting)
+
+                log.error("Task :: {0} :: Reverted tx! [{1}] Elapsed: [{2}] Timeout: [{3}]".format(
+                    task.task_name, tx['hash'], elapsed.seconds, timeout_waiting))
+
+                task.pending_transactions.remove(tx)
+
+            # Pending status
+            elif tx_rcp.status == -1:
+                elapsed = datetime.datetime.now() - tx['timestamp']
+                timeout = datetime.timedelta(seconds=timeout_waiting)
+
+                if elapsed > timeout:
+                    log.error("Task :: {0} :: Timeout tx! [{1}]".format(task.task_name, tx['hash']))
+                    task.pending_transactions.remove(tx)
+
+                else:
+
+                    if tx['is_replacement']:
+                        action_label = 'Task :: {0} :: TX Replacement Pending.'.format(task.task_name)
+                    else:
+                        action_label = 'Task :: {0} :: TX Pending.'.format(task.task_name)
+
+                    log.info(
+                        "{0}"
+                        " Hash: [{1}] "
+                        " Price Oracle: [{2}] "
+                        " Price Last Time: [{3}] "
+                        " Price New: [{4}] "
+                        " Variation Oracle: [{5}] "
+                        " Variation Last Time: [{6}] "
+                        " Gas Price: [{7}] "                        
+                        " Nonce: [{8}] "
+                        " Elapsed: [{9}]".format(
+                            action_label,
+                            tx['hash'],
+                            tx['price_oracle'],
+                            tx['price_last_time'],
+                            tx['price_new'],
+                            tx['variation_oracle'],
+                            tx['variation_last_time'],
+                            Web3.toWei(tx['gas_price'], 'ether'),
+                            tx['nonce'],
+                            elapsed.seconds
+                        )
+                    )
+
+            # Dropped Status
+            elif tx_rcp.status == -2:
+
+                elapsed = datetime.datetime.now() - tx['timestamp']
+
+                if tx['is_replacement']:
+                    action_label = 'Task :: {0} :: TX Replacement Dropped.'.format(task.task_name)
+                else:
+                    action_label = 'Task :: {0} :: TX Dropped.'.format(task.task_name)
+
+                log.info(
+                    "{0}"
+                    " Hash: [{1}] "
+                    " Price Oracle: [{2}] "
+                    " Price Last Time: [{3}] "
+                    " Price New: [{4}] "
+                    " Variation Oracle: [{5}] "
+                    " Variation Last Time: [{6}] "
+                    " Gas Price: [{7}] "
+                    " Nonce: [{8}] "
+                    " Elapsed: [{9}]".format(
+                        action_label,
+                        tx['hash'],
+                        tx['price_oracle'],
+                        tx['price_last_time'],
+                        tx['price_new'],
+                        tx['variation_oracle'],
+                        tx['variation_last_time'],
+                        Web3.fromWei(tx['gas_price'], 'gwei'),
+                        tx['nonce'],
+                        elapsed.seconds
+                    )
+                )
+
+                task.pending_transactions.remove(tx)
+
+            else:
+                raise Exception("Not valid transaction status!")
+
+    return task.pending_transactions
 
 
 def task_reconnect_on_lost_chain(task=None, global_manager=None):
@@ -360,26 +709,38 @@ class PriceFeederTaskBase(TasksManager):
 
         return result
 
-    def post_price(self, price_no_precision, info_contracts, post, re_post_is_in_range, task=None, global_manager=None):
+    def post_price(
+            self,
+            price_no_precision,
+            info_contracts,
+            post,
+            re_post_is_in_range,
+            pending_tx_receipt,
+            task=None,
+            global_manager=None):
         # Not call until tx confirmed!
-        pending_tx_receipt = pending_transaction_receipt(task)
         last_used_nonce = None
-        # Check if the receipt exists in the pending transaction
-        if 'receipt' in pending_tx_receipt:
-            # Continue on pending status or reverted
-            if (not pending_tx_receipt['receipt']['confirmed'] and not re_post_is_in_range) or pending_tx_receipt['receipt']['reverted']:
-                return pending_tx_receipt
-        # No receipt in the pending transaction
-        else:
-            # There is no post condition, and no tx to replace, just return
-            if not post:
-                return
-            # No tx to replace, so cannot be a re_post
-            re_post_is_in_range = False  
+        # # Check if the receipt exists in the pending transaction
+        # if 'receipt' in pending_tx_receipt:
+        #     # Continue on pending status or reverted
+        #     if (not pending_tx_receipt['receipt']['confirmed'] and not re_post_is_in_range) or pending_tx_receipt['receipt']['reverted']:
+        #         return pending_tx_receipt
+        # # No receipt in the pending transaction
+        # else:
+        #     # There is no post condition, and no tx to replace, just return
+        #     if not post:
+        #         return
+        #     # No tx to replace, so cannot be a re_post
+        #     re_post_is_in_range = False
 
         # the tx queue is full and there is not a re post condition, so return
         if not re_post_is_in_range and pending_queue_is_full():
             log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
+            aws_put_metric_heart_beat(1)
+            return
+
+        if len(pending_tx_receipt['pending_transactions']) > 3:
+            log.error("Task :: {0} :: Abort! Too many pending transactions!".format(task.task_name))
             aws_put_metric_heart_beat(1)
             return
 
@@ -405,17 +766,44 @@ class PriceFeederTaskBase(TasksManager):
         # Multiply factor of the using gas price
         calculated_gas_price = using_gas_price * decimal.Decimal(self.options['gas_price_multiply_factor'])
         # is a price re post and there is a pending tx, we try to re post the tx
-        if re_post_is_in_range and not pending_tx_receipt['receipt']['confirmed']:
-            pending_tx = chain.get_transaction(task.tx_receipt)
-            actual_nonce = web3.eth.getTransactionCount(network_manager.accounts[0].address)
-            last_used_nonce = pending_tx.nonce
-            # if any of the pending txs was mined the nonce increased and no other re post can be done 
+        receipt_info = dict()
+        receipt_info['is_replacement'] = False
+        receipt_info['gas_price'] = calculated_gas_price
+        nonce = web3.eth.getTransactionCount(network_manager.accounts[0].address)
+        receipt_info['nonce'] = nonce
+
+        #if re_post_is_in_range and not pending_tx_receipt['receipt']['confirmed']:
+        if re_post_is_in_range and pending_tx_receipt['pending_transactions']:
+
+            # if not pending_tx_receipt['pending_transactions']:
+            #     log.error("Task :: {0} :: Error Replacement! But no pending transaction!?".format(task.task_name))
+            #     return
+
+            # get the last pending transaction from the list of pendings
+            last_pending_tx = pending_tx_receipt['pending_transactions'][-1]
+
+            #pending_tx = chain.get_transaction(task.tx_receipt)
+
+            last_used_nonce = last_pending_tx['nonce'] #pending_tx.nonce
+            # if any of the pending txs was mined the nonce increased and no other re-post can be done
             # return without saving new tx receipt, so new post can be executed
             # we are assuming that the wallet running this script is not used for others txs or the
-            # probably that that happen during a re post is very low. In any case, a post always will succeed
-            if(actual_nonce > last_used_nonce): return
-            calculated_gas_price = Web3.fromWei(pending_tx.gas_price, 'ether') * decimal.Decimal(network_options['re_post_gas_price_increment'])
-            log.info(" Replacing tx price "
+            # probably that happen during a re-post is very low. In any case, a post always will succeed
+
+            log.info("DEBUG 6>>>>")
+            log.info(pending_tx_receipt['pending_transactions'])
+            log.info(last_pending_tx)
+            log.info(last_used_nonce)
+            log.info(nonce)
+
+            if nonce > last_used_nonce:
+                return
+
+            calculated_gas_price = last_pending_tx['gas_price'] * decimal.Decimal(network_options['re_post_gas_price_increment'])
+            receipt_info['is_replacement'] = True
+            receipt_info['gas_price'] = calculated_gas_price
+            receipt_info['nonce'] = nonce
+            log.info("Replacing tx price "
                 "New gas price: [{0:.18f}] "
                 "Nonce: [{1}] ".format(
             calculated_gas_price,
@@ -426,7 +814,7 @@ class PriceFeederTaskBase(TasksManager):
             gas_limit=gas_limit,
             gas_price=calculated_gas_price * 10 ** 18,
             required_confs=0,
-            nonce=last_used_nonce # if None, it will be automatically calculated
+            nonce=nonce # if None, it will be automatically calculated
         )
 
         # expiration block required the price feeder
@@ -460,10 +848,20 @@ class PriceFeederTaskBase(TasksManager):
         # save the last timestamp to compare
         global_manager['last_price_timestamp'] = datetime.datetime.now()
 
-        return save_pending_tx_receipt(tx_receipt, task.task_name)
+        return save_pending_tx_receipt(
+            tx_receipt,
+            task.task_name,
+            is_replacement=receipt_info['is_replacement'],
+            gas_price=receipt_info['gas_price'],
+            nonce=receipt_info['nonce']
+        )
 
     def task_price_feed(self, task=None, global_manager=None):
+
         result = dict()
+
+        # first evaluate pending, confirmed, reverted, timeout, not found transaction
+        result['pending_transactions'] = pending_transactions(task)
 
         # now
         now = datetime.datetime.now()
@@ -522,7 +920,7 @@ class PriceFeederTaskBase(TasksManager):
         else:
             last_price_variation = decimal.Decimal(0)
 
-        # Accepted variation to re write to blockchain
+        # Accepted variation to re-write to blockchain
         re_post_is_in_range = last_price_variation >= decimal.Decimal(price_variation_re_write_blockchain)
 
         td_delta = now - last_price_timestamp
@@ -541,29 +939,80 @@ class PriceFeederTaskBase(TasksManager):
                  "Last price variation: [{8:.6}%] "
                  "Last write ago: [{9}]".format(
             task.task_name,
-            last_price_oracle,
-            last_price,
-            price_no_precision,
-            is_in_range,
-            re_post_is_in_range,
-            is_in_time,
-            price_variation_oracle * 100,
-            last_price_variation * 100,
-            td_delta.seconds))
+                  last_price_oracle,
+                  last_price,
+                  price_no_precision,
+                  is_in_range,
+                  re_post_is_in_range,
+                  is_in_time,
+                  price_variation_oracle * 100,
+                  last_price_variation * 100,
+                  td_delta.seconds))
 
         # IF is in range or not in range but is in time
         is_post = is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity
         if is_post or re_post_is_in_range:
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, is_post, re_post_is_in_range, task=task, global_manager=global_manager)
+                new_tx = self.post_price(
+                    price_no_precision,
+                    info_contracts,
+                    is_post,
+                    re_post_is_in_range,
+                    result,
+                    task=task,
+                    global_manager=global_manager)
+
+                new_tx_dict = dict()
+                new_tx_dict['price_oracle'] = last_price_oracle
+                new_tx_dict['price_last_time'] = last_price
+                new_tx_dict['price_new'] = price_no_precision
+                new_tx_dict['variation_oracle'] = price_variation_oracle * 100
+                new_tx_dict['variation_last_time'] = last_price_variation * 100
+                if new_tx:
+                    new_tx_dict['hash'] = new_tx['receipt']['id']
+                    new_tx_dict['is_replacement'] = new_tx['receipt']['is_replacement']
+                    new_tx_dict['timestamp'] = new_tx['receipt']['timestamp']
+                    new_tx_dict['gas_price'] = new_tx['receipt']['gas_price']
+                    new_tx_dict['gas_price_replacement'] = new_tx['receipt']['gas_price_replacement']
+                    new_tx_dict['nonce'] = new_tx['receipt']['nonce']
+                    new_tx_dict['nonce_replacement'] = new_tx['receipt']['nonce_replacement']
+
+                    result['pending_transactions'].append(new_tx_dict)
+
+                # if result['receipt'].get('is_replacement', None):
+                #     log.info(
+                #         "TX Replacement Pending. "
+                #         " Hash: [{0}] "
+                #         " Price Oracle: [{1}] "
+                #         " Price Last Time: [{2}] "
+                #         " Price New: [{3}] "
+                #         " Variation Oracle: [{4}] "
+                #         " Variation Last Time: [{5}] "
+                #         " Gas Price: [{6}] "
+                #         " Gas Price Replacement: [{7}] "
+                #         " Nonce: [{8}] "
+                #         " Nonce Replacement: [{9}] ".format(
+                #             result['receipt']['id'],
+                #             result['receipt']['price_oracle'],
+                #             result['receipt']['price_last_time'],
+                #             result['receipt']['price_new'],
+                #             result['receipt']['variation_oracle'],
+                #             result['receipt']['variation_last_time'],
+                #             result['receipt']['gas_price'],
+                #             result['receipt']['gas_price_replacement'],
+                #             result['receipt']['nonce'],
+                #             result['receipt']['nonce_replacement'],
+                #         )
+                #     )
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
-        if result:
-            return result
-        else:
-            return save_pending_tx_receipt(None, task.task_name)
+        return result
+        # if result:
+        #     return result
+        # else:
+        #     return save_pending_tx_receipt(None, task.task_name)
 
     def task_price_feed_backup(self, task=None, global_manager=None):
         """ Only start to work only when we don't have price """
@@ -664,8 +1113,8 @@ class PriceFeederTaskBase(TasksManager):
         self.max_workers = 1
 
         # Reconnect on lost chain
-        log.info("Job add: 99. Reconnect on lost chain")
-        self.add_task(task_reconnect_on_lost_chain, args=[], wait=180, timeout=180)
+        # log.info("Job add: 99. Reconnect on lost chain")
+        # self.add_task(task_reconnect_on_lost_chain, args=[], wait=180, timeout=180)
 
         backup_mode = False
         if 'backup_mode' in self.options:
@@ -687,14 +1136,14 @@ class PriceFeederTaskBase(TasksManager):
                           timeout=180,
                           task_name='1. Price Feeder')
 
-        # oracle poke disable price when something happend on source exchanges
-        # prefered to disabled price validity
-        log.info("Job add: 3. Oracle Poke [disable price]")
-        self.add_task(self.task_contract_oracle_poke,
-                      args=[],
-                      wait=60,
-                      timeout=180,
-                      task_name='3. Oracle Poke [disable price]')
+        # # oracle poke disable price when something happend on source exchanges
+        # # prefered to disabled price validity
+        # log.info("Job add: 3. Oracle Poke [disable price]")
+        # self.add_task(self.task_contract_oracle_poke,
+        #               args=[],
+        #               wait=60,
+        #               timeout=180,
+        #               task_name='3. Oracle Poke [disable price]')
 
         # Set max workers
         self.max_tasks = len(self.tasks)
@@ -734,6 +1183,9 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
 
         result = dict()
 
+        # first evaluate pending, confirmed, reverted, timeout, not found transaction
+        result['pending_transactions'] = pending_transactions(task)
+
         # now
         now = datetime.datetime.now()
 
@@ -763,7 +1215,8 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # read contracts
         info_contracts = self.contracts()
 
-        price_no_precision = self.price_from_sources()
+        #price_no_precision = self.price_from_sources()
+        price_no_precision = decimal.Decimal(round(random.uniform(0.06990, 0.06975), 5))
 
         if not price_no_precision:
             # when no price finish task and put an alarm
@@ -801,7 +1254,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         else:
             last_price_variation = decimal.Decimal(0)
 
-        # Accepted variation to re write to blockchain
+        # Accepted variation to re-write to blockchain
         re_post_is_in_range = last_price_variation >= decimal.Decimal(price_variation_re_write_blockchain)
 
         td_delta = now - last_price_timestamp
@@ -821,30 +1274,81 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                  "Floor: [{9:.6}] "
                  "Last write ago: [{10}]".format(
             task.task_name,
-            last_price_oracle,
-            last_price,
-            price_no_precision,
-            is_in_range,
-            re_post_is_in_range,
-            is_in_time,
-            price_variation_oracle*100,
-            last_price_variation*100,
-            price_floor,
-            td_delta.seconds))
+                  last_price_oracle,
+                  last_price,
+                  price_no_precision,
+                  is_in_range,
+                  re_post_is_in_range,
+                  is_in_time,
+                  price_variation_oracle*100,
+                  last_price_variation*100,
+                  price_floor,
+                  td_delta.seconds))
 
         # IF is in range or not in range but is in time
         is_post = is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity
         if is_post or re_post_is_in_range:
             # submit the value to contract
             if not self.is_simulation:
-                result = self.post_price(price_no_precision, info_contracts, is_post, re_post_is_in_range, task=task, global_manager=global_manager)
+                new_tx = self.post_price(
+                    price_no_precision,
+                    info_contracts,
+                    is_post,
+                    re_post_is_in_range,
+                    result,
+                    task=task,
+                    global_manager=global_manager)
+
+                new_tx_dict = dict()
+                new_tx_dict['price_oracle'] = last_price_oracle
+                new_tx_dict['price_last_time'] = last_price
+                new_tx_dict['price_new'] = price_no_precision
+                new_tx_dict['variation_oracle'] = price_variation_oracle * 100
+                new_tx_dict['variation_last_time'] = last_price_variation * 100
+                if new_tx:
+                    new_tx_dict['hash'] = new_tx['receipt']['id']
+                    new_tx_dict['is_replacement'] = new_tx['receipt']['is_replacement']
+                    new_tx_dict['timestamp'] = new_tx['receipt']['timestamp']
+                    new_tx_dict['gas_price'] = new_tx['receipt']['gas_price']
+                    new_tx_dict['gas_price_replacement'] = new_tx['receipt']['gas_price_replacement']
+                    new_tx_dict['nonce'] = new_tx['receipt']['nonce']
+                    new_tx_dict['nonce_replacement'] = new_tx['receipt']['nonce_replacement']
+
+                    result['pending_transactions'].append(new_tx_dict)
+
+                # if result['receipt'].get('is_replacement', None):
+                #     log.info(
+                #         "Task :: {0} :: TX Replacement Pending. "
+                #         " Hash: [{0}] "
+                #         " Price Oracle: [{1}] "
+                #         " Price Last Time: [{2}] "
+                #         " Price New: [{3}] "
+                #         " Variation Oracle: [{4}] "
+                #         " Variation Last Time: [{5}] "
+                #         " Gas Price: [{6}] "
+                #         " Gas Price Replacement: [{7}] "
+                #         " Nonce: [{8}] "
+                #         " Nonce Replacement: [{9}] ".format(
+                #             result['receipt']['id'],
+                #             result['receipt']['price_oracle'],
+                #             result['receipt']['price_last_time'],
+                #             result['receipt']['price_new'],
+                #             result['receipt']['variation_oracle'],
+                #             result['receipt']['variation_last_time'],
+                #             result['receipt']['gas_price'],
+                #             result['receipt']['gas_price_replacement'],
+                #             result['receipt']['nonce'],
+                #             result['receipt']['nonce_replacement'],
+                #         )
+                #     )
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
-        if result:
-            return result
-        else:
-            return save_pending_tx_receipt(None, task.task_name)
+        return result
+        # if result:
+        #     return result
+        # else:
+        #     return save_pending_tx_receipt(None, task.task_name)
 
 
 class PriceFeederTaskETH(PriceFeederTaskBase):
