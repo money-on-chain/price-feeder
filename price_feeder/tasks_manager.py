@@ -5,6 +5,9 @@ import uuid
 from concurrent.futures import TimeoutError
 import datetime
 from multiprocessing import Manager
+from web3 import Web3, exceptions
+from functools import wraps
+
 
 from pebble import ProcessPool, sighandler, ProcessExpired, ThreadPool
 
@@ -48,7 +51,7 @@ class Task:
         self.task_name = task_name
 
 
-class TasksManager:
+class TransactionsTasksManager:
 
     def __init__(self):
         self.tasks = dict()
@@ -90,7 +93,6 @@ class TasksManager:
                         task.nonce_replacement = task.result['receipt'].get('nonce_replacement', '')
 
 
-
         except TimeoutError as e:
             log.info("Function took longer than %d seconds. Task going to cancel!" % e.args[1])
             aws_put_metric_heart_beat(1)
@@ -119,7 +121,7 @@ class TasksManager:
                 # pass task object as vars to run funtion
                 task.kwargs["task"] = task
                 task.kwargs["global_manager"] = global_manager
-                future = pool.schedule(task.func, args=task.args, kwargs=task.kwargs, timeout=task.timeout)
+                future = pool.schedule(task.func, args=task.args, kwargs=task.kwargs)
                 future.add_done_callback(functools.partial(self.on_task_done, task=task))
 
     def start_loop(self):
@@ -127,7 +129,7 @@ class TasksManager:
         log.info("Start Task jobs loop")
         global_manager = Manager().dict()
 
-        with ProcessPool(max_workers=self.max_workers, max_tasks=self.max_tasks) as pool:
+        with ThreadPool(max_workers=self.max_workers, max_tasks=self.max_tasks) as pool:
             try:
                 while True:
                     if self.tasks:
@@ -143,6 +145,232 @@ class TasksManager:
         log.info("End Task Jobs loop")
 
 
+def on_pending_transactions(method):
+    @wraps(method)
+    def _impl(self, *method_args, **method_kwargs):
+        pending_txs = self.pending_transactions(method_kwargs['task'])
+        task_result = dict()
+        task_result['pending_transactions'] = pending_txs
+        method_kwargs['task_result'] = task_result
+        method_result = method(self, *method_args, **method_kwargs)
+        return method_result
+    return _impl
+
+
+class PendingTransactionsTasksManager(TransactionsTasksManager):
+
+    def __init__(self,
+                 config,
+                 connection_helper,
+                 contracts_loaded
+                 ):
+
+        TransactionsTasksManager.__init__(self)
+
+        self.config = config
+        self.connection_helper = connection_helper
+        self.contracts_loaded = contracts_loaded
+
+    def pending_queue_is_full(self, account_index=0):
+
+        web3 = self.connection_helper.connection_manager.web3
+
+        # get first account
+        account_address = self.connection_helper.connection_manager.accounts[account_index].address
+
+        nonce = web3.eth.get_transaction_count(account_address, 'pending')
+        last_used_nonce = web3.eth.get_transaction_count(account_address)
+
+        # A limit of pending on blockchain
+        if nonce >= last_used_nonce + self.config['max_pending_txs']:
+            #log.info('Cannot create more transactions for {} as the node queue will be full [{}, {}]'.format(
+            #    account_address, nonce, last_used_nonce))
+            return True
+
+        return False
+
+    @staticmethod
+    def remove_nonce_pending_transactions(pending_transactions, nonce):
+
+        count = 0
+        for tx in pending_transactions:
+            if tx['nonce'] == nonce:
+                pending_transactions.remove(tx)
+                count += 1
+
+        return count
+
+    def pending_transactions(self, task):
+        """ Wait to pending receipt get confirmed"""
+
+        web3 = self.connection_helper.connection_manager.web3
+
+        if not task.pending_transactions:
+            task.pending_transactions = list()
+        else:
+
+            for tx in task.pending_transactions:
+                # log.info("DEBUG 5>>>")
+                # log.info(tx)
+
+                try:
+                    web3.eth.get_transaction(tx['hash'])
+                except exceptions.TransactionNotFound:
+
+                    # 4. STATUS: Dropped Tx
+
+                    # Transaction not exist anymore or dropped, permit to send new tx
+                    elapsed = datetime.datetime.now() - tx['timestamp']
+
+                    if tx['is_replacement']:
+                        action_label = 'Task :: {0} :: TX Replacement Dropped.'.format(task.task_name)
+                    else:
+                        action_label = 'Task :: {0} :: TX Dropped.'.format(task.task_name)
+
+                    log.info(
+                        "{0}"
+                        " Hash: [{1}] "
+                        " Price Oracle: [{2}] "
+                        " Price Last Time: [{3}] "
+                        " Price New: [{4}] "
+                        " Variation Oracle: [{5}] "
+                        " Variation Last Time: [{6}] "
+                        " Gas Price: [{7}] "
+                        " Nonce: [{8}] "
+                        " Elapsed: [{9}]".format(
+                            action_label,
+                            Web3.to_hex(tx['hash']),
+                            tx['price_oracle'],
+                            tx['price_last_time'],
+                            tx['price_new'],
+                            tx['variation_oracle'],
+                            tx['variation_last_time'],
+                            Web3.from_wei(tx['gas_price'], 'gwei'),
+                            tx['nonce'],
+                            elapsed.seconds
+                        )
+                    )
+
+                    #task.pending_transactions.remove(tx)
+                    self.remove_nonce_pending_transactions(task.pending_transactions, tx['nonce'])
+
+                    continue
+
+                try:
+                    tx_rcp = web3.eth.get_transaction_receipt(tx['hash'])
+                except exceptions.TransactionNotFound:
+
+                    # 1. STATUS: Pending tx
+
+                    # timeout and permit to send again transaction
+                    elapsed = datetime.datetime.now() - tx['timestamp']
+
+                    if tx['is_replacement']:
+                        timeout_waiting = self.config['timeout_pending_replace_tx']
+                        label_timeout = 'Timeout TX Replacement!'
+                    else:
+                        timeout_waiting = self.config['timeout_pending_tx']
+                        label_timeout = 'Timeout TX!'
+
+                    timeout = datetime.timedelta(seconds=timeout_waiting)
+
+                    if elapsed > timeout:
+
+                        log.error("Task :: {0} :: {1} [{2}]".format(
+                            task.task_name, label_timeout, Web3.from_wei(tx['hash'])))
+                        task.pending_transactions.remove(tx)
+
+                    else:
+
+                        if tx['is_replacement']:
+                            action_label = 'Task :: {0} :: TX Replacement Pending.'.format(task.task_name)
+                        else:
+                            action_label = 'Task :: {0} :: TX Pending.'.format(task.task_name)
+
+                        log.info(
+                            "{0}"
+                            " Hash: [{1}] "
+                            " Price Oracle: [{2}] "
+                            " Price Last Time: [{3}] "
+                            " Price New: [{4}] "
+                            " Variation Oracle: [{5}] "
+                            " Variation Last Time: [{6}] "
+                            " Gas Price: [{7}] "
+                            " Nonce: [{8}] "
+                            " Elapsed: [{9}]".format(
+                                action_label,
+                                Web3.to_hex(tx['hash']),
+                                tx['price_oracle'],
+                                tx['price_last_time'],
+                                tx['price_new'],
+                                tx['variation_oracle'],
+                                tx['variation_last_time'],
+                                Web3.to_wei(tx['gas_price'], 'ether'),
+                                tx['nonce'],
+                                elapsed.seconds
+                            )
+                        )
+
+                    continue
+
+                # 2. STATUS: Confirmed status
+                if tx_rcp['status'] > 0:
+
+                    elapsed = datetime.datetime.now() - tx['timestamp']
+
+                    if tx['is_replacement']:
+                        action_label = 'Task :: {0} :: TX Replacement Confirmed.'.format(task.task_name)
+                    else:
+                        action_label = 'Task :: {0} :: TX Confirmed.'.format(task.task_name)
+
+                    log.info(
+                        "{0}"
+                        " Hash: [{1}] "
+                        " Price Oracle: [{2}] "
+                        " Price Last Time: [{3}] "
+                        " Price New: [{4}] "
+                        " Variation Oracle: [{5}] "
+                        " Variation Last Time: [{6}] "
+                        " Gas Price: [{7}] "
+                        " Nonce: [{8}] "
+                        " Elapsed: [{9}]".format(
+                            action_label,
+                            Web3.to_hex(tx['hash']),
+                            tx['price_oracle'],
+                            tx['price_last_time'],
+                            tx['price_new'],
+                            tx['variation_oracle'],
+                            tx['variation_last_time'],
+                            Web3.to_wei(tx['gas_price'], 'ether'),
+                            tx['nonce'],
+                            elapsed.seconds
+                        )
+                    )
+
+                    task.pending_transactions.remove(tx)
+
+                # 3. STATUS: Reverted status
+                else:
+
+                    elapsed = datetime.datetime.now() - tx['timestamp']
+
+                    if tx['is_replacement']:
+                        timeout_waiting = self.config['timeout_pending_replace_tx']
+                        label_timeout = 'Reverted TX Replacement!'
+                    else:
+                        timeout_waiting = self.config['timeout_pending_tx']
+                        label_timeout = 'Reverted TX!'
+
+                    timeout = datetime.timedelta(seconds=timeout_waiting)
+
+                    log.error("Task :: {0} :: {1} [{2}] Elapsed: [{3}] Timeout: [{4}]".format(
+                        task.task_name, label_timeout, Web3.from_wei(tx['hash']), elapsed.seconds, timeout))
+
+                    task.pending_transactions.remove(tx)
+
+        return task.pending_transactions
+
+
 def test_task_1(task_id):
     print("Start task 1 id: {}".format(task_id))
     sleep(2)
@@ -156,7 +384,7 @@ def test_task_2(task_id):
 
 
 if __name__ == '__main__':
-    jobs = TasksManager()
+    jobs = TransactionsTasksManager()
     jobs.add_task(test_task_1, args=[1])
     jobs.add_task(test_task_2, args=[5])
     jobs.start_loop()
