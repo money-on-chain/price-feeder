@@ -45,8 +45,8 @@ class Task:
         self.result = None
         self.shutdown = False
         self.last_run = datetime.datetime.now()
-        self.tx_receipt = None
-        self.tx_receipt_timestamp = None
+        # self.tx_receipt = None
+        # self.tx_receipt_timestamp = None
         self.pending_transactions = None
         self.task_name = task_name
 
@@ -77,21 +77,6 @@ class TransactionsTasksManager:
                         task.shutdown = True
                 elif 'pending_transactions' in task.result:
                     task.pending_transactions = task.result['pending_transactions']
-                elif 'receipt' in task.result:
-                    if 'id' in task.result['receipt']:
-                        task.tx_receipt = task.result['receipt']['id']
-                        task.tx_receipt_timestamp = task.result['receipt']['timestamp']
-                        task.is_replacement = task.result['receipt'].get('is_replacement', False)
-                        task.price_oracle = task.result['receipt'].get('price_oracle', '')
-                        task.price_last_time = task.result['receipt'].get('price_last_time', '')
-                        task.price_new = task.result['receipt'].get('price_new', '')
-                        task.variation_oracle = task.result['receipt'].get('variation_oracle', '')
-                        task.variation_last_time = task.result['receipt'].get('variation_last_time', '')
-                        task.gas_price = task.result['receipt'].get('gas_price', '')
-                        task.gas_price_replacement = task.result['receipt'].get('gas_price_replacement', '')
-                        task.nonce = task.result['receipt'].get('nonce', '')
-                        task.nonce_replacement = task.result['receipt'].get('nonce_replacement', '')
-
 
         except TimeoutError as e:
             log.info("Function took longer than %d seconds. Task going to cancel!" % e.args[1])
@@ -171,47 +156,23 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
         self.connection_helper = connection_helper
         self.contracts_loaded = contracts_loaded
 
-    def pending_queue_is_full(self, account_index=0):
+    def pending_transactions(self, task, account_index=0):
+        """ Iterate on pending list and change status if need it """
 
         web3 = self.connection_helper.connection_manager.web3
 
-        # get first account
+        # get index account, default first index 0
         account_address = self.connection_helper.connection_manager.accounts[account_index].address
-
-        nonce = web3.eth.get_transaction_count(account_address, 'pending')
-        last_used_nonce = web3.eth.get_transaction_count(account_address)
-
-        # A limit of pending on blockchain
-        if nonce >= last_used_nonce + self.config['max_pending_txs']:
-            #log.info('Cannot create more transactions for {} as the node queue will be full [{}, {}]'.format(
-            #    account_address, nonce, last_used_nonce))
-            return True
-
-        return False
-
-    @staticmethod
-    def remove_nonce_pending_transactions(pending_transactions, nonce):
-
-        count = 0
-        for tx in pending_transactions:
-            if tx['nonce'] == nonce:
-                pending_transactions.remove(tx)
-                count += 1
-
-        return count
-
-    def pending_transactions(self, task):
-        """ Wait to pending receipt get confirmed"""
-
-        web3 = self.connection_helper.connection_manager.web3
 
         if not task.pending_transactions:
             task.pending_transactions = list()
         else:
 
+            # semaphore to clear the queue of pending transactions
+            clear = False
+
+            # iterate over the pending transaction and update status in the queue
             for tx in task.pending_transactions:
-                # log.info("DEBUG 5>>>")
-                # log.info(tx)
 
                 try:
                     web3.eth.get_transaction(tx['hash'])
@@ -251,9 +212,6 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
                         )
                     )
 
-                    #task.pending_transactions.remove(tx)
-                    self.remove_nonce_pending_transactions(task.pending_transactions, tx['nonce'])
-
                     continue
 
                 try:
@@ -276,9 +234,11 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
 
                     if elapsed > timeout:
 
+                        # timeout pending transactions
                         log.error("Task :: {0} :: {1} [{2}]".format(
-                            task.task_name, label_timeout, Web3.from_wei(tx['hash'])))
-                        task.pending_transactions.remove(tx)
+                            task.task_name, label_timeout, Web3.from_wei(tx['hash'], 'gwei')))
+
+                        clear = True
 
                     else:
 
@@ -347,7 +307,7 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
                         )
                     )
 
-                    task.pending_transactions.remove(tx)
+                    clear = True
 
                 # 3. STATUS: Reverted status
                 else:
@@ -364,9 +324,26 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
                     timeout = datetime.timedelta(seconds=timeout_waiting)
 
                     log.error("Task :: {0} :: {1} [{2}] Elapsed: [{3}] Timeout: [{4}]".format(
-                        task.task_name, label_timeout, Web3.from_wei(tx['hash']), elapsed.seconds, timeout))
+                        task.task_name, label_timeout, Web3.from_wei(tx['hash'], 'gwei'), elapsed.seconds, timeout))
 
-                    task.pending_transactions.remove(tx)
+                    clear = True
+
+            # end for
+
+            # Clear if change nonce
+            last_pending_nonce = task.pending_transactions[-1]['nonce']
+            last_used_nonce = web3.eth.get_transaction_count(account_address)
+            if not clear and last_used_nonce > last_pending_nonce:
+                # if last transaction pending nonce are ready in the blockchain account nonce
+                # clear the pending tx
+                clear = True
+                log.warn("Task :: {0} :: Pending nonce is not sync with blockchain address. "
+                         "Clearing now!. Pending Nonce: [{1}] Nonce: [{2}]".format(task.task_name,
+                                                                                   last_pending_nonce,
+                                                                                   last_used_nonce))
+
+            if clear:
+                task.pending_transactions = []
 
         return task.pending_transactions
 

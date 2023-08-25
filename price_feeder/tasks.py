@@ -174,28 +174,6 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
 
         return result
 
-    @staticmethod
-    def pending_transactions_count(pending_transactions):
-        count_tx = 0
-        count_tx_replace = 0
-        for tx in pending_transactions:
-            if tx['is_replacement']:
-                count_tx_replace += 1
-            else:
-                count_tx += 1
-
-        return dict(count_tx=count_tx, count_tx_replace=count_tx_replace)
-
-    @staticmethod
-    def pending_transactions_remove_replacement(pending_transactions):
-        count_tx_replace = 0
-        for tx in pending_transactions:
-            if tx['is_replacement']:
-                pending_transactions.remove(tx)
-                count_tx_replace += 1
-
-        return count_tx_replace
-
     def post_price(
             self,
             price_no_precision,
@@ -203,31 +181,16 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
             task_result,
             task=None,
             global_manager=None):
-        # Not call until tx confirmed!
-        last_used_nonce = None
-        # # Check if the receipt exists in the pending transaction
-        # if 'receipt' in pending_tx_receipt:
-        #     # Continue on pending status or reverted
-        #     if (not pending_tx_receipt['receipt']['confirmed'] and not re_post_is_in_range) or pending_tx_receipt['receipt']['reverted']:
-        #         return pending_tx_receipt
-        # # No receipt in the pending transaction
-        # else:
-        #     # There is no post condition, and no tx to replace, just return
-        #     if not post:
-        #         return
-        #     # No tx to replace, so cannot be a re_post
-        #     re_post_is_in_range = False
 
         web3 = self.connection_helper.connection_manager.web3
 
         # the tx queue is full and there is not a re-post condition, so return
-        if not re_post_is_in_range and self.pending_queue_is_full():
+        if not re_post_is_in_range and len(task_result['pending_transactions']) > 0:
             # no more pending tx
             return task_result, None
 
         # limit a pending transactions replace in queue
-        if (self.pending_transactions_count(task_result['pending_transactions'])['count_tx_replace'] >
-                self.config['max_pending_replace_txs']):
+        if len(task_result['pending_transactions']) > self.config['max_pending_replace_txs'] + 1:
             log.error("Task :: {0} :: Abort! Too many pending replace transactions!".format(task.task_name))
             return task_result, None
 
@@ -253,50 +216,33 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         tx_info = dict()
         tx_info['is_replacement'] = False
         tx_info['gas_price'] = calculated_gas_price
+        # nonce = web3.eth.get_transaction_count(
+        #     self.connection_helper.connection_manager.accounts[0].address)
         nonce = web3.eth.get_transaction_count(
-            self.connection_helper.connection_manager.accounts[0].address)
+            self.connection_helper.connection_manager.accounts[0].address, "pending")
 
-        if (re_post_is_in_range and
-                self.pending_transactions_count(task_result['pending_transactions'])['count_tx'] > 0):
-            # only enter when there are a pending transaction (normal post) in queue
+        if re_post_is_in_range and len(task_result['pending_transactions']) > 0:
+            # only enter when there are a pending transactions in queue
             # this is a re-place tx
 
             # get the last pending transaction from the list of pending txs
             last_pending_tx = task_result['pending_transactions'][-1]
 
-            last_used_nonce = last_pending_tx['nonce']
             # if any of the pending txs was mined the nonce increased and no other re-post can be done
             # return without saving new tx receipt, so new post can be executed
             # we are assuming that the wallet running this script is not used for others txs or the
             # probably that happen during a re-post is very low. In any case, a post always will succeed
 
-            log.info("DEBUG 6>>>>")
-            log.info(task_result['pending_transactions'])
-            log.info(last_pending_tx)
-            log.info(last_used_nonce)
-            log.info(nonce)
-
-            if nonce > last_used_nonce:
+            if nonce > last_pending_tx['nonce'] + 1:
+                log.warn("Task :: {0} :: Nonce is different that in the queue of txs pending".format(task.task_name))
                 return task_result, None
+
+            nonce = last_pending_tx['nonce']
 
             calculated_gas_price = last_pending_tx['gas_price'] * decimal.Decimal(
                 self.config['re_post_gas_price_increment'])
             tx_info['is_replacement'] = True
             tx_info['gas_price'] = calculated_gas_price
-            tx_info['nonce'] = nonce
-
-            log.info("Replacing tx price "
-                "New gas price: [{0:.18f}] "
-                "Nonce: [{1}] ".format(
-            calculated_gas_price,
-            last_used_nonce,
-            ))
-        # else:
-        #     nonce = web3.eth.get_transaction_count(
-        #         self.connection_helper.connection_manager.accounts[0].address, "pending")
-        # else:
-        #     # this is a normal tx post, please remove from pending any replacement pending
-        #     self.pending_transactions_remove_replacement(task_result['pending_transactions'])
 
         tx_info['nonce'] = nonce
 
@@ -306,10 +252,6 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
 
         # set the precision to price
         price_to_set = price_no_precision * 10 ** 18
-
-        log.info("DEBUG 8>>>>")
-        log.info(calculated_gas_price)
-        log.info(nonce)
 
         # send transaction to the price feeder
         tx_hash = self.contracts_loaded["PriceFeed"].post(
@@ -486,98 +428,6 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
         return result
-        # if result:
-        #     return result
-        # else:
-        #     return save_pending_tx_receipt(None, task.task_name)
-
-    # def task_price_feed_backup(self, task=None, global_manager=None):
-    #     """ Only start to work only when we don't have price """
-    #
-    #     result = dict()
-    #
-    #     # get the last price we insert as a feeder
-    #     if 'backup_writes' in global_manager:
-    #         backup_writes = global_manager['backup_writes']
-    #     else:
-    #         backup_writes = 0
-    #
-    #     # read contracts
-    #     info_contracts = self.contracts()
-    #
-    #     if not info_contracts['medianizer'].compute()[1] or backup_writes > 0:
-    #
-    #         result = self.task_price_feed(task=task, global_manager=global_manager)
-    #
-    #         aws_put_metric_heart_beat(1)
-    #
-    #         if backup_writes <= 0:
-    #             if 'backup_writes' in self.options:
-    #                 backup_writes = self.options['backup_writes']
-    #             else:
-    #                 backup_writes = 100
-    #
-    #         backup_writes -= 1
-    #
-    #         log.error("Task :: {0} :: BACKUP MODE ACTIVATED! WRITE REMAINING:{1}".format(task.task_name,
-    #                                                                                      backup_writes))
-    #
-    #     else:
-    #         log.info("Task :: {0} :: [NO BACKUP MODE ACTIVATED]".format(task.task_name))
-    #
-    #     # Save backup writes to later use
-    #     global_manager['backup_writes'] = backup_writes
-    #
-    #     if result:
-    #         return result
-    #     else:
-    #         return save_pending_tx_receipt(None, task.task_name)
-
-    # def task_contract_oracle_poke(self, task=None, global_manager=None):
-    #
-    #     # Not call until tx confirmated!
-    #     pending_tx_receipt = pending_transaction_receipt(task)
-    #     if 'receipt' in pending_tx_receipt:
-    #         if not pending_tx_receipt['receipt']['confirmed'] or pending_tx_receipt['receipt']['reverted']:
-    #             # Continue on pending status or reverted
-    #             return pending_tx_receipt
-    #
-    #     # set the maximum gas limit
-    #     gas_limit = self.options['gas_limit']
-    #
-    #     # read contracts
-    #     info_contracts = self.contracts()
-    #
-    #     price_validity = info_contracts['medianizer'].peek()[1]
-    #     if not info_contracts['medianizer'].compute()[1] and price_validity:
-    #
-    #         if pending_queue_is_full():
-    #             log.error("Task :: {0} :: Pending queue is full".format(task.task_name))
-    #             aws_put_metric_heart_beat(1)
-    #             return
-    #
-    #         tx_args = info_contracts['medianizer'].tx_arguments(gas_limit=gas_limit, required_confs=0)
-    #
-    #         # check estimate gas is greater than gas limit
-    #         estimate_gas = info_contracts['medianizer'].sc.poke.estimate_gas(tx_args)
-    #         if estimate_gas > gas_limit:
-    #             log.error("Task :: {0} :: Estimate gas is > to gas limit. No send tx".format(task.task_name))
-    #             aws_put_metric_heart_beat(1)
-    #             return
-    #
-    #         tx_receipt = info_contracts['medianizer'].sc.poke(tx_args)
-    #         log.error("Task :: {0} :: Not valid price! Disabling Price!".format(task.task_name))
-    #         aws_put_metric_heart_beat(1)
-    #
-    #         return save_pending_tx_receipt(tx_receipt, task.task_name)
-    #
-    #     # if no valid price in oracle please send alarm
-    #     if not price_validity:
-    #         log.error("Task :: {0} :: No valid price in oracle!".format(task.task_name))
-    #         aws_put_metric_heart_beat(1)
-    #
-    #     log.info("Task :: {0} :: No!".format(task.task_name))
-    #     return save_pending_tx_receipt(None, task.task_name)
 
     def schedule_tasks(self):
 
@@ -589,39 +439,12 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         # set max workers
         self.max_workers = 1
 
-        # Reconnect on lost chain
-        # log.info("Job add: 99. Reconnect on lost chain")
-        # self.add_task(task_reconnect_on_lost_chain, args=[], wait=180, timeout=180)
-
-        # backup_mode = False
-        # if 'backup_mode' in self.options:
-        #     if self.options['backup_mode']:
-        #         backup_mode = True
-        #
-        # if backup_mode:
-        #     log.info("Job add: 2. Price feeder as BACKUP!")
-        #     self.add_task(self.task_price_feed_backup,
-        #                   args=[],
-        #                   wait=self.options['interval'],
-        #                   timeout=180,
-        #                   task_name='2. Price feeder as BACKUP')
-        # else:
-
         log.info("Job add: 1. Price Feeder")
         self.add_task(self.task_price_feed,
                       args=[],
                       wait=self.config['tasks']['price_feed']['interval'],
                       timeout=self.config['tasks']['price_feed']['wait_timeout'],
                       task_name='1. Price Feeder')
-
-        # # oracle poke disable price when something happend on source exchanges
-        # # prefered to disabled price validity
-        # log.info("Job add: 3. Oracle Poke [disable price]")
-        # self.add_task(self.task_contract_oracle_poke,
-        #               args=[],
-        #               wait=60,
-        #               timeout=180,
-        #               task_name='3. Oracle Poke [disable price]')
 
         # Set max workers
         self.max_tasks = len(self.tasks)

@@ -10,7 +10,6 @@
       "gas_limit": 200000
     }
   },
-  "max_pending_txs": 1,
   "max_pending_replace_txs": 2,
   "timeout_pending_tx": 180,
   "timeout_pending_replace_tx": 120,
