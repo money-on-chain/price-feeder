@@ -272,6 +272,17 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         tx_info['hash'] = tx_hash
         tx_info['timestamp'] = datetime.datetime.now()
 
+        if tx_info['is_replacement']:
+            caption_log = 'Sending Replace TX'
+        else:
+            caption_log = 'Sending TX'
+
+        log.info("Task :: {0} :: {1} :: Hash: [{2}] Nonce: [{3}] Gas Price: [{4}]".format(task.task_name,
+                                                                                          caption_log,
+                                                                                          Web3.to_hex(tx_info['hash']),
+                                                                                          tx_info['nonce'],
+                                                                                          int(calculated_gas_price*10**18)))
+
         return task_result, tx_info
 
     @on_pending_transactions
