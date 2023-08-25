@@ -275,25 +275,25 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         return task_result, tx_info
 
     @on_pending_transactions
-    def task_price_feed(self, task=None, global_manager=None):
+    def task_price_feed(self, task=None, global_manager=None, task_result=None):
 
-        result = dict()
+        if not task_result:
+            task_result = dict()
 
-        # first evaluate pending, confirmed, reverted, timeout, not found transaction
-        result['pending_transactions'] = pending_transactions(task)
+        if not isinstance(task_result, dict):
+            raise Exception("Task result must be dict type")
 
         # now
         now = datetime.datetime.now()
 
-        network_options = self.options['networks'][self.config_network]
         # price variation accepted
-        price_variation_write_blockchain = network_options['price_variation_write_blockchain']
+        price_variation_write_blockchain = self.config['price_variation_write_blockchain']
 
         # re post price variation accepted
-        price_variation_re_write_blockchain = network_options['price_variation_re_write_blockchain']
+        price_variation_re_write_blockchain = self.config['price_variation_re_write_blockchain']
 
         # max time in seconds that price is valid
-        block_expiration = network_options['block_expiration']
+        block_expiration = self.config['block_expiration']
 
         timeout_in_time = abs(block_expiration - MAX_PENDING_BLOCK_TIME)
 
@@ -308,24 +308,22 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         else:
             last_price_timestamp = datetime.datetime.now() - datetime.timedelta(seconds=timeout_in_time + 1)
 
-        # read contracts
-        #info_contracts = self.contracts()
-
         # get new price from source
         price_no_precision = self.price_from_sources()
+        # price_no_precision = decimal.Decimal(round(random.uniform(0.06990, 0.06975), 5))
 
         if not price_no_precision:
             # when no price finish task and put an alarm
             log.error("Task :: {0} :: No price source!.".format(task.task_name))
             aws_put_metric_heart_beat(1)  # Put an alarm in AWS
-            return result
+            return task_result
 
         # get the price from oracle and validity of the same
-        last_price_oracle, last_price_oracle_validity = info_contracts['medianizer'].peek()
+        last_price_oracle, last_price_oracle_validity = self.contracts_loaded['MoCMedianizer'].peek()
         if not last_price_oracle_validity:
             # cannot contact medianizer but we continue to put price
             log.error("Task :: {0} :: CANNOT GET MEDIANIZER PRICE! ".format(task.task_name))
-            aws_put_metric_heart_beat(1)  # Put an alarm in AWS
+            #aws_put_metric_heart_beat(1)  # Put an alarm in AWS
 
         # calculate the price variation from the last price from oracle
         price_variation_oracle = abs((price_no_precision / last_price_oracle) - 1)
@@ -347,87 +345,65 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         # is more than 5 minutes from the last write
         is_in_time = (last_price_timestamp + datetime.timedelta(seconds=timeout_in_time) < now)
 
-        log.info("Task :: {0} :: "
-                 "Oracle: [{1:.6f}] "
-                 "Last: [{2:.6f}] "
-                 "New: [{3:.6f}] "
+        if task_result.get('pending_transactions', None):
+            count_pending_txs = len(task_result['pending_transactions'])
+        else:
+            count_pending_txs = 0
+
+        log.info("Task :: {0} :: Evaluate Price :: "
+                 "Price Oracle: [{1:.6f}] "
+                 "Price Last Time: [{2:.6f}] "
+                 "Price New: [{3:.6f}] "
                  "Is in range: [{4}] "
-                 "Is in re post range: [{5}] "
+                 "Is in range replace: [{5}] "
                  "Is in time: [{6}] "
-                 "Variation: [{7:.6}%] "
-                 "Last price variation: [{8:.6}%] "
-                 "Last write ago: [{9}]".format(
+                 "Variation Oracle: [{7:.6}%] "
+                 "Variation Last Time: [{8:.6}%] "
+                 "Last write ago: [{9}] "
+                 "Pending Txs: [{10}]".format(
             task.task_name,
-                  last_price_oracle,
-                  last_price,
-                  price_no_precision,
-                  is_in_range,
-                  re_post_is_in_range,
-                  is_in_time,
-                  price_variation_oracle * 100,
-                  last_price_variation * 100,
-                  td_delta.seconds))
+            last_price_oracle,
+            last_price,
+            price_no_precision,
+            is_in_range,
+            re_post_is_in_range,
+            is_in_time,
+            price_variation_oracle * 100,
+            last_price_variation * 100,
+            td_delta.seconds,
+            count_pending_txs))
 
         # IF is in range or not in range but is in time
         is_post = is_in_range or (not is_in_range and is_in_time) or not last_price_oracle_validity
         if is_post or re_post_is_in_range:
             # submit the value to contract
             if not self.config['is_simulation']:
-                new_tx = self.post_price(
+                task_result, tx_info = self.post_price(
                     price_no_precision,
-                    info_contracts,
-                    is_post,
                     re_post_is_in_range,
-                    result,
+                    task_result,
                     task=task,
                     global_manager=global_manager)
 
-                new_tx_dict = dict()
-                new_tx_dict['price_oracle'] = last_price_oracle
-                new_tx_dict['price_last_time'] = last_price
-                new_tx_dict['price_new'] = price_no_precision
-                new_tx_dict['variation_oracle'] = price_variation_oracle * 100
-                new_tx_dict['variation_last_time'] = last_price_variation * 100
-                if new_tx:
-                    new_tx_dict['hash'] = new_tx['receipt']['id']
-                    new_tx_dict['is_replacement'] = new_tx['receipt']['is_replacement']
-                    new_tx_dict['timestamp'] = new_tx['receipt']['timestamp']
-                    new_tx_dict['gas_price'] = new_tx['receipt']['gas_price']
-                    new_tx_dict['gas_price_replacement'] = new_tx['receipt']['gas_price_replacement']
-                    new_tx_dict['nonce'] = new_tx['receipt']['nonce']
-                    new_tx_dict['nonce_replacement'] = new_tx['receipt']['nonce_replacement']
+                if tx_info:
+                    new_tx_dict = dict()
+                    new_tx_dict['price_oracle'] = last_price_oracle
+                    new_tx_dict['price_last_time'] = last_price
+                    new_tx_dict['price_new'] = price_no_precision
+                    new_tx_dict['variation_oracle'] = price_variation_oracle * 100
+                    new_tx_dict['variation_last_time'] = last_price_variation * 100
+                    new_tx_dict['hash'] = tx_info['hash']
+                    new_tx_dict['is_replacement'] = tx_info['is_replacement']
+                    new_tx_dict['timestamp'] = tx_info['timestamp']
+                    new_tx_dict['gas_price'] = tx_info['gas_price']
+                    new_tx_dict['nonce'] = tx_info['nonce']
 
-                    result['pending_transactions'].append(new_tx_dict)
+                    task_result['pending_transactions'].append(new_tx_dict)
 
-                # if result['receipt'].get('is_replacement', None):
-                #     log.info(
-                #         "TX Replacement Pending. "
-                #         " Hash: [{0}] "
-                #         " Price Oracle: [{1}] "
-                #         " Price Last Time: [{2}] "
-                #         " Price New: [{3}] "
-                #         " Variation Oracle: [{4}] "
-                #         " Variation Last Time: [{5}] "
-                #         " Gas Price: [{6}] "
-                #         " Gas Price Replacement: [{7}] "
-                #         " Nonce: [{8}] "
-                #         " Nonce Replacement: [{9}] ".format(
-                #             result['receipt']['id'],
-                #             result['receipt']['price_oracle'],
-                #             result['receipt']['price_last_time'],
-                #             result['receipt']['price_new'],
-                #             result['receipt']['variation_oracle'],
-                #             result['receipt']['variation_last_time'],
-                #             result['receipt']['gas_price'],
-                #             result['receipt']['gas_price_replacement'],
-                #             result['receipt']['nonce'],
-                #             result['receipt']['nonce_replacement'],
-                #         )
-                #     )
             else:
                 log.info("Task :: {0} :: Simulation Post! ".format(task.task_name))
 
-        return result
+        return task_result
 
     def schedule_tasks(self):
 
