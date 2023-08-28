@@ -24,6 +24,7 @@ RUN mkdir /home/www-data && mkdir /home/www-data/app \
 ARG CONFIG=config.json
 
 WORKDIR /home/www-data/app/price_feeder/
+COPY app_run_price_feeder.py ./
 ADD $CONFIG ./config.json
 COPY price_feeder/ ./price_feeder/
 ENV AWS_DEFAULT_REGION=us-west-1
