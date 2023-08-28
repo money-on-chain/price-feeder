@@ -164,6 +164,9 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
         # get index account, default first index 0
         account_address = self.connection_helper.connection_manager.accounts[account_index].address
 
+        # get the last nonce
+        last_used_nonce = web3.eth.get_transaction_count(account_address)
+
         if not task.pending_transactions:
             task.pending_transactions = list()
         else:
@@ -332,7 +335,6 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
 
             # Clear if change nonce
             last_pending_nonce = task.pending_transactions[-1]['nonce']
-            last_used_nonce = web3.eth.get_transaction_count(account_address)
             if not clear and last_used_nonce > last_pending_nonce:
                 # if last transaction pending nonce are ready in the blockchain account nonce
                 # clear the pending tx
