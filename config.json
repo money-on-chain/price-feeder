@@ -1,6 +1,6 @@
 {
-  "uri": "https://public-node.rsk.co",
-  "chain_id": 30,
+  "uri": "https://public-node.testnet.rsk.co",
+  "chain_id": 31,
   "app_mode": "RIF",
   "debug": false,
   "tasks": {
@@ -23,8 +23,8 @@
   "re_post_gas_price_increment": 1.4,
   "min_prices_source": 1,
   "addresses": {
-    "MoCState": "0x541F68a796Fe5ae3A381d2Aa5a50b975632e40A6",
-    "MoCMedianizer": "0x504EfCadFB020d6bBaeC8a5c5BB21453719d0E00",
-    "PriceFeed": "0x461750b4824b14c3d9b7702bC6fBB82469082b23"
+    "MoCState": "0x496eD67F77D044C8d9471fe86085Ccb5DC4d2f63",
+    "MoCMedianizer": "0x9d4b2c05818A0086e641437fcb64ab6098c7BbEc",
+    "PriceFeed": "0x462D7082F3671a3BE160638Be3f8C23Ca354F48A"
   }
 }
