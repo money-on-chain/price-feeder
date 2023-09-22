@@ -8,7 +8,7 @@ from moneyonchain.networks import network_manager, web3, chain
 from moneyonchain.rdoc import RDOCMoCState
 from moneyonchain.medianizer import MoCMedianizer, PriceFeed
 
-from moc_prices_source import get_price, BTC_USD, RIF_USD_B, RIF_USD_T, RIF_USD_TB, RIF_USD_WMTB, RIF_USDT, ETH_BTC, USDT_USD, BNB_USDT
+from moc_prices_source import get_price, BTC_USD, RIF_USD_B, RIF_USD_T, RIF_USD_TB, RIF_USD_WMTB, RIF_USDT, RIF_USDT_MA, ETH_BTC, USDT_USD, BNB_USDT
 
 from .tasks_manager import TasksManager
 from .logger import log
@@ -277,6 +277,8 @@ class PriceFeederTaskBase(TasksManager):
                 return RIF_USD_WMTB
             elif self.pair_option == 'RIF_USDT':
                 return RIF_USDT
+            elif self.pair_option == 'RIF_USDT_MA':
+                return RIF_USDT_MA
             elif self.pair_option == 'ETH_BTC':
                 return ETH_BTC
             elif self.pair_option == 'USDT_USD':
