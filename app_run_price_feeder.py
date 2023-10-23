@@ -6,7 +6,9 @@ from price_feeder.tasks import PriceFeederTaskMoC, \
     PriceFeederTaskRIF, \
     PriceFeederTaskETH, \
     PriceFeederTaskUSDT, \
-    PriceFeederTaskBNB
+    PriceFeederTaskBNB, \
+    PriceFeederTaskARS, \
+    PriceFeederTaskMXN
 
 
 def options_from_config(filename=None):
@@ -45,6 +47,10 @@ if __name__ == '__main__':
         price_feeder_tasks = PriceFeederTaskUSDT(config)
     elif app_mode == 'BNB':
         price_feeder_tasks = PriceFeederTaskBNB(config)
+    elif app_mode == 'ARS':
+        price_feeder_tasks = PriceFeederTaskARS(config)
+    elif app_mode == 'MXN':
+        price_feeder_tasks = PriceFeederTaskMXN(config)
     else:
         raise Exception("App mode not recognize!")
 

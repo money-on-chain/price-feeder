@@ -1,11 +1,11 @@
 {
   "uri": "https://public-node.testnet.rsk.co",
   "chain_id": 31,
-  "app_mode": "ARS",
+  "app_mode": "MXN",
   "debug": false,
   "tasks": {
     "price_feed": {
-      "interval": 30,
+      "interval": 1,
       "wait_timeout": 120,
       "gas_limit": 200000
     }
@@ -22,7 +22,7 @@
   "re_post_gas_price_increment": 1.4,
   "min_prices_source": 1,
   "addresses": {
-    "MoCMedianizer": "0xD1AFe67986523447b3426Ac2Fb8be2EE4aF5dad7",
-    "PriceFeed": "0xc0a21606b2a3cFA698ffBf4A125c77dEc650aF97"
+    "MoCMedianizer": "0x6951020041bFA2565877BF0eaF7f5DF039b490dC",
+    "PriceFeed": "0xb913c7494b918ED637D4DF1308E1b7fF820b75b6"
   }
 }

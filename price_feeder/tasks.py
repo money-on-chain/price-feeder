@@ -14,7 +14,9 @@ from moc_prices_source import get_price, \
     RIF_USDT, \
     ETH_BTC, \
     USDT_USD, \
-    BNB_USDT
+    BNB_USDT, \
+    USD_ARS_CCB, \
+    USD_MXN
 
 from .tasks_manager import PendingTransactionsTasksManager, on_pending_transactions
 from .logger import log
@@ -77,7 +79,10 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         """ Get coin pair from app Mode"""
 
         app_mode = self.config['app_mode']
-        pair_option = self.config['pair_option']
+        if 'pair_option' in self.config:
+            pair_option = self.config['pair_option']
+        else:
+            pair_option = None
 
         if pair_option is None:
             if app_mode == 'MoC':
@@ -90,6 +95,10 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return USDT_USD
             elif app_mode == 'BNB':
                 return BNB_USDT
+            elif app_mode == 'ARS':
+                return USD_ARS_CCB
+            elif app_mode == 'MXN':
+                return USD_MXN
             else:
                 raise Exception("App mode not recognize!")
         else:
@@ -133,7 +142,7 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 row.append(price_source['weighing'])
                 row.append(price_source['percentual_weighing'])
                 row.append(price_source['age'])
-                row.append(price_source['ok'])
+                row.append('Y' if price_source['ok'] else 'N')
                 row.append(price_source['last_change_timestamp'])
                 table.append(row)
 
@@ -633,4 +642,17 @@ class PriceFeederTaskBNB(PriceFeederTaskBase):
 
     def __init__(self, config):
 
+        super().__init__(config)
+
+
+class PriceFeederTaskARS(PriceFeederTaskBase):
+
+    def __init__(self, config):
+
+        super().__init__(config)
+
+
+class PriceFeederTaskMXN(PriceFeederTaskBase):
+
+    def __init__(self, config):
         super().__init__(config)
