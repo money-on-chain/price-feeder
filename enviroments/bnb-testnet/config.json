@@ -1,24 +1,28 @@
 {
-  "backup_mode": false,
-  "backup_writes": 100,
-  "interval": 1,
-  "timeout": 180,
+  "uri": "https://public-node.testnet.rsk.co",
+  "chain_id": 31,
+  "app_mode": "BNB",
+  "debug": false,
+  "tasks": {
+    "price_feed": {
+      "interval": 1,
+      "wait_timeout": 120,
+      "gas_limit": 200000
+    }
+  },
+  "max_pending_replace_txs": 2,
+  "timeout_pending_tx": 180,
+  "timeout_pending_replace_tx": 120,
   "gas_price": 65820000,
   "gas_price_multiply_factor": 1.0001,
-  "is_simulation": true,
-  "gas_limit": 200000,
-  "networks": {
-    "bnbTestnet": {
-      "app_mode": "BNB",
-      "block_expiration": 600,
-      "price_variation_write_blockchain": 0.002,
-      "price_variation_re_write_blockchain": 0.001,
-      "re_post_gas_price_increment": 1.4,
-      "min_prices_source": 1,
-      "addresses": {
-        "MoCMedianizer": "0xB4A44672b55d66fAFA23b4F9Ba28c9C55F76fbfB",
-        "PriceFeed": "0x15c7cF2c90695176dadB6c19bE34a2588Bd4eA53"
-      }
-    }
+  "is_simulation": false,
+  "block_expiration": 600,
+  "price_variation_write_blockchain": 0.001,
+  "price_variation_re_write_blockchain": 0.001,
+  "re_post_gas_price_increment": 1.4,
+  "min_prices_source": 1,
+  "addresses": {
+    "MoCMedianizer": "0xB4A44672b55d66fAFA23b4F9Ba28c9C55F76fbfB",
+    "PriceFeed": "0x15c7cF2c90695176dadB6c19bE34a2588Bd4eA53"
   }
 }

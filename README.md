@@ -70,36 +70,11 @@ address.
 
 **Requirement and installation**
  
-*  Required Python 3.9
+*  Required Python 3.10
 
 Install libraries
 
 `pip install -r requirements.txt`
-
-**Also we need brownie installed**
-
-`pip install eth-brownie==1.17.0`
-
-**Add custom RSK Network connection** 
-
-First we need to install custom networks (RSK Nodes) in brownie:
-
-```
-console> brownie networks add RskNetwork rskTestnetPublic host=https://public-node.testnet.rsk.co chainid=31 explorer=https://blockscout.com/rsk/mainnet/api
-console> brownie networks add RskNetwork rskTestnetLocal host=http://localhost:4444 chainid=31 explorer=https://blockscout.com/rsk/mainnet/api
-console> brownie networks add RskNetwork rskMainnetPublic host=https://public-node.rsk.co chainid=30 explorer=https://blockscout.com/rsk/mainnet/api
-console> brownie networks add RskNetwork rskMainnetLocal host=http://localhost:4444 chainid=30 explorer=https://blockscout.com/rsk/mainnet/api
-```
-
-**Connection table**
-
-| Network Name      | Network node          | Host                               | Chain    |
-|-------------------|-----------------------|------------------------------------|----------|
-| rskTestnetPublic  | RSK Testnet Public    | https://public-node.testnet.rsk.co | 31       |    
-| rskTestnetLocal   | RSK Testnet Local     | http://localhost:4444              | 31       |
-| rskMainnetPublic  | RSK Mainnet Public    | https://public-node.rsk.co         | 30       |
-| rskMainnetLocal   | RSK Mainnet Local     | http://localhost:4444              | 30       |
-
 
 **Usage Job**
 
@@ -107,15 +82,23 @@ There are many networks already preconfigurated see enviroments/ folder.
 
 `export ACCOUNT_PK_SECRET=(Your PK)`
 
-`python app_run_price_feeder.py --connection_network=rskTestnetPublic --config_network=mocTestnet --config ./enviroments/moc-testnet/config.json`
+`python app_run_price_feeder.py --config ./enviroments/moc-testnet/config.json`
 
 **Note:** Replace (Your PK) with your private key owner of the account.
 
 **--config:** Path to config.json or json content (string)
 
-**--connection_network=rskTestnetPublic:** Network connection name
+#### Custom node instead using of public node
 
-**--config_network=mocTestnet:** config_network reference to network in the config.
+If you want to use your custom private node pass as environment settings, before running price feeder:
+
+`export APP_CONNECTION_URI=https://public-node.rsk.co`
+
+#### Custom config
+
+If you want to use your custom settings, before running price feeder:
+
+`export APP_CONFIG=....`
 
 
 ### Docker (Recommended)
@@ -132,14 +115,8 @@ Run, replace ACCOUNT_PK_SECRET  with your private key owner of the account
 docker run -d \
 --name price_feeder_1 \
 --env ACCOUNT_PK_SECRET=asdfasdfasdf \
---env APP_CONNECTION_NETWORK=rskTestnetPublic \
---env APP_CONFIG_NETWORK=rdocTestnet \
 price_feeder
 ```
-
-### Custom node
-
-**APP_CONNECTION_NETWORK:** https://public-node.testnet.rsk.co,31
 
 ## Security and Audits
 
