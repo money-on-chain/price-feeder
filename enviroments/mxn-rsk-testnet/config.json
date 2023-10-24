@@ -6,7 +6,7 @@
   "debug": false,
   "tasks": {
     "price_feed": {
-      "interval": 1,
+      "interval": 10,
       "wait_timeout": 120,
       "gas_limit": 200000
     }

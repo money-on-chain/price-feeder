@@ -97,6 +97,9 @@ class ConnectionManager(BaseConnectionManager):
 
         self.accounts = accounts
 
+        for acc in self.accounts:
+            self.log.info("Using account: {0}".format(acc.address))
+
     def set_default_account(self, index):
         """ Default index account from config.json accounts """
 
