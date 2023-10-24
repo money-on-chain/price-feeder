@@ -2,6 +2,7 @@
   "uri": "https://public-node.testnet.rsk.co",
   "chain_id": 31,
   "app_mode": "MXN",
+  "pair_option": "USD_MXN",
   "debug": false,
   "tasks": {
     "price_feed": {

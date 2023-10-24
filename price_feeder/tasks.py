@@ -15,6 +15,7 @@ from moc_prices_source import get_price, \
     ETH_BTC, \
     USDT_USD, \
     BNB_USDT, \
+    USD_ARS,  \
     USD_ARS_CCB, \
     USD_MXN
 
@@ -120,6 +121,12 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return USDT_USD
             elif pair_option == 'BNB_USDT':
                 return BNB_USDT
+            elif pair_option == 'USD_ARS_CCB':
+                return USD_ARS_CCB
+            elif pair_option == 'USD_ARS':
+                return USD_ARS
+            elif pair_option == 'USD_MXN':
+                return USD_MXN
             else:
                 raise Exception("Pair option not recognize!")
 
