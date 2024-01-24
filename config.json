@@ -1,8 +1,8 @@
 {
   "uri": "https://public-node.testnet.rsk.co",
   "chain_id": 31,
-  "app_mode": "MXN",
-  "pair_option": "USD_MXN",
+  "app_mode": "ARS",
+  "pair_option": "USD_ARS",
   "debug": false,
   "tasks": {
     "price_feed": {
@@ -18,12 +18,12 @@
   "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
   "block_expiration": 600,
-  "price_variation_write_blockchain": 0.0005,
+  "price_variation_write_blockchain": 0.001,
   "price_variation_re_write_blockchain": 0.01,
   "re_post_gas_price_increment": 1.4,
   "min_prices_source": 1,
   "addresses": {
-    "MoCMedianizer": "0x6951020041bFA2565877BF0eaF7f5DF039b490dC",
-    "PriceFeed": "0xb913c7494b918ED637D4DF1308E1b7fF820b75b6"
+    "MoCMedianizer": "0xD1AFe67986523447b3426Ac2Fb8be2EE4aF5dad7",
+    "PriceFeed": "0xc0a21606b2a3cFA698ffBf4A125c77dEc650aF97"
   }
 }

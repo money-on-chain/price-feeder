@@ -2,7 +2,7 @@
   "uri": "https://public-node.testnet.rsk.co",
   "chain_id": 31,
   "app_mode": "ARS",
-  "pair_option": "USD_ARS_CCB",
+  "pair_option": "USD_ARS",
   "debug": false,
   "tasks": {
     "price_feed": {
