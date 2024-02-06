@@ -17,6 +17,8 @@ from moc_prices_source import get_price, \
     BNB_USDT, \
     USD_ARS,  \
     USD_ARS_CCB, \
+    USD_COP,  \
+    USD_COP_CCB, \
     USD_MXN
 
 from .tasks_manager import PendingTransactionsTasksManager, on_pending_transactions
@@ -98,6 +100,8 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return BNB_USDT
             elif app_mode == 'ARS':
                 return USD_ARS_CCB
+            elif app_mode == 'COP':
+                return USD_COP_CCB
             elif app_mode == 'MXN':
                 return USD_MXN
             else:
@@ -125,6 +129,10 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return USD_ARS_CCB
             elif pair_option == 'USD_ARS':
                 return USD_ARS
+            elif pair_option == 'USD_COP_CCB':
+                return USD_COP_CCB
+            elif pair_option == 'USD_COP':
+                return USD_COP            
             elif pair_option == 'USD_MXN':
                 return USD_MXN
             else:

@@ -1,0 +1,29 @@
+{
+  "uri": "https://public-node.testnet.rsk.co",
+  "chain_id": 31,
+  "app_mode": "COP",
+  "pair_option": "USD_COP_CCB",
+  "debug": false,
+  "tasks": {
+    "price_feed": {
+      "interval": 10,
+      "wait_timeout": 120,
+      "gas_limit": 200000
+    }
+  },
+  "max_pending_replace_txs": 2,
+  "timeout_pending_tx": 180,
+  "timeout_pending_replace_tx": 120,
+  "gas_price": 65820000,
+  "gas_price_multiply_factor": 1.0001,
+  "is_simulation": false,
+  "block_expiration": 600,
+  "price_variation_write_blockchain": 0.001,
+  "price_variation_re_write_blockchain": 0.01,
+  "re_post_gas_price_increment": 1.4,
+  "min_prices_source": 1,
+  "addresses": {
+    "MoCMedianizer": "TBD",
+    "PriceFeed": "TBD"
+  }
+}
