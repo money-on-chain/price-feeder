@@ -1,7 +1,6 @@
 import datetime
-import random
 
-from web3 import Web3, exceptions
+from web3 import Web3
 import decimal
 from tabulate import tabulate
 
@@ -15,9 +14,9 @@ from moc_prices_source import get_price, \
     ETH_BTC, \
     USDT_USD, \
     BNB_USDT, \
-    USD_ARS,  \
+    USD_ARS, \
     USD_ARS_CCB, \
-    USD_COP,  \
+    USD_COP, \
     USD_COP_CCB, \
     USD_MXN
 
