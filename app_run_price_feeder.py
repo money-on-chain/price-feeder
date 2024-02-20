@@ -8,7 +8,8 @@ from price_feeder.tasks import PriceFeederTaskMoC, \
     PriceFeederTaskUSDT, \
     PriceFeederTaskBNB, \
     PriceFeederTaskARS, \
-    PriceFeederTaskMXN
+    PriceFeederTaskMXN, \
+    PriceFeederTaskCOP
 
 
 def options_from_config(filename=None):
@@ -51,6 +52,8 @@ if __name__ == '__main__':
         price_feeder_tasks = PriceFeederTaskARS(config)
     elif app_mode == 'MXN':
         price_feeder_tasks = PriceFeederTaskMXN(config)
+    elif app_mode == 'COP':
+        price_feeder_tasks = PriceFeederTaskCOP(config)
     else:
         raise Exception("App mode not recognize!")
 

@@ -27,7 +27,7 @@ from .contracts import MoCMedianizer, PriceFeed, MoCState, MoCStateRRC20
 from .base.main import ConnectionHelperBase
 
 
-__VERSION__ = '3.0.1'
+__VERSION__ = '3.0.2'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -667,6 +667,12 @@ class PriceFeederTaskARS(PriceFeederTaskBase):
 
 
 class PriceFeederTaskMXN(PriceFeederTaskBase):
+
+    def __init__(self, config):
+        super().__init__(config)
+
+
+class PriceFeederTaskCOP(PriceFeederTaskBase):
 
     def __init__(self, config):
         super().__init__(config)
