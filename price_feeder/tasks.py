@@ -554,10 +554,9 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                  "Is in range replace: [{5}] "
                  "Is in time: [{6}] "
                  "Variation Oracle: [{7:.6}%] "
-                 "Variation Last Time: [{8:.6}%] "
-                 "Floor: [{9:.6}] "
-                 "Last write ago: [{10}] "
-                 "Pending Txs: [{11}]".format(
+                 "Variation Last Time: [{8:.6}%] "                 
+                 "Last write ago: [{9}] "
+                 "Pending Txs: [{10}]".format(
             task.task_name,
                   last_price_oracle,
                   last_price,
@@ -567,7 +566,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                   is_in_time,
                   price_variation_oracle*100,
                   last_price_variation*100,
-                  price_floor,
+
                   td_delta.seconds,
                   count_pending_txs))
 
