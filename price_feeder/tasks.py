@@ -524,17 +524,6 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # calculate the price variation from the last price from oracle
         price_variation_oracle = abs((price_no_precision / last_price_oracle) - 1)
 
-        # if the price is below the floor, I don't publish it
-        ema = self.contracts_loaded['MoCState'].price_moving_average()
-        price_floor = ema * decimal.Decimal(0.193)
-        under_the_floor = price_floor and price_floor > price_no_precision
-        if under_the_floor:
-            log.error("Task :: {0} :: Price under the floor!. Price: {1} Price Floor: {2} ".format(
-                task.task_name,
-                price_no_precision,
-                price_floor))
-            return task_result
-
         # Accepted variation to write to blockchain
         is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
 
