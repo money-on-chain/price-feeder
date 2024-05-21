@@ -18,8 +18,8 @@
   "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
   "block_expiration": 600,
-  "price_variation_write_blockchain": 0.005,
-  "price_variation_re_write_blockchain": 0.05,
+  "price_variation_write_blockchain": 0.001,
+  "price_variation_re_write_blockchain": 0.2,
   "re_post_gas_price_increment": 1.4,
   "min_prices_source": 1,
   "addresses": {
