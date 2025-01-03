@@ -12,6 +12,7 @@ from moc_prices_source import get_price, \
     RIF_USD_WMTB, \
     RIF_USDT, \
     ETH_BTC, \
+    ETH_USD, \
     USDT_USD, \
     BNB_USDT, \
     USD_ARS, \
@@ -23,7 +24,7 @@ from moc_prices_source import get_price, \
 from .tasks_manager import PendingTransactionsTasksManager, on_pending_transactions
 from .logger import log
 from .utils import aws_put_metric_heart_beat
-from .contracts import MoCMedianizer, PriceFeed, MoCState, MoCStateRRC20
+from .contracts import MoCMedianizer, PriceFeed, MoCStateRRC20
 from .base.main import ConnectionHelperBase
 
 
@@ -93,6 +94,8 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return RIF_USD_B
             elif app_mode == 'ETH':
                 return ETH_BTC
+            elif app_mode == 'MoCETH':
+                return ETH_USD
             elif app_mode == 'USDT':
                 return USDT_USD
             elif app_mode == 'BNB':
@@ -120,6 +123,8 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return RIF_USDT
             elif pair_option == 'ETH_BTC':
                 return ETH_BTC
+            elif pair_option == 'ETH_USD':
+                return ETH_USD
             elif pair_option == 'USDT_USD':
                 return USDT_USD
             elif pair_option == 'BNB_USDT':
@@ -467,14 +472,18 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
 class PriceFeederTaskMoC(PriceFeederTaskBase):
 
     def __init__(self, config):
+        super().__init__(config)
 
+
+class PriceFeederTaskMoCETH(PriceFeederTaskBase):
+
+    def __init__(self, config):
         super().__init__(config)
 
 
 class PriceFeederTaskRIF(PriceFeederTaskBase):
 
     def __init__(self, config):
-
         super().__init__(config)
 
     def load_contracts(self):
@@ -629,28 +638,24 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
 class PriceFeederTaskETH(PriceFeederTaskBase):
 
     def __init__(self, config):
-
         super().__init__(config)
 
 
 class PriceFeederTaskUSDT(PriceFeederTaskBase):
 
     def __init__(self, config):
-
         super().__init__(config)
 
 
 class PriceFeederTaskBNB(PriceFeederTaskBase):
 
     def __init__(self, config):
-
         super().__init__(config)
 
 
 class PriceFeederTaskARS(PriceFeederTaskBase):
 
     def __init__(self, config):
-
         super().__init__(config)
 
 

@@ -3,6 +3,7 @@ import json
 
 
 from price_feeder.tasks import PriceFeederTaskMoC, \
+    PriceFeederTaskMoCETH, \
     PriceFeederTaskRIF, \
     PriceFeederTaskETH, \
     PriceFeederTaskUSDT, \
@@ -40,6 +41,8 @@ if __name__ == '__main__':
 
     if app_mode == 'MoC':
         price_feeder_tasks = PriceFeederTaskMoC(config)
+    elif app_mode == 'MoCETH':
+        price_feeder_tasks = PriceFeederTaskMoCETH(config)
     elif app_mode == 'RIF':
         price_feeder_tasks = PriceFeederTaskRIF(config)
     elif app_mode == 'ETH':
