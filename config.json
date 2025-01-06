@@ -1,12 +1,11 @@
 {
-  "uri": "https://public-node.testnet.rsk.co",
-  "chain_id": 31,
-  "app_mode": "COP",
-  "pair_option": "USD_COP_CCB",
+  "uri": "https://sepolia.drpc.org",
+  "chain_id": 11155111,
+  "app_mode": "MoCETH",
   "debug": false,
   "tasks": {
     "price_feed": {
-      "interval": 20,
+      "interval": 40,
       "wait_timeout": 120,
       "gas_limit": 200000
     }
@@ -14,16 +13,16 @@
   "max_pending_replace_txs": 2,
   "timeout_pending_tx": 180,
   "timeout_pending_replace_tx": 120,
-  "gas_price": 65820000,
+  "gas_price": 7500000000,
   "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
   "block_expiration": 600,
   "price_variation_write_blockchain": 0.005,
-  "price_variation_re_write_blockchain": 0.05,
+  "price_variation_re_write_blockchain": 0.005,
   "re_post_gas_price_increment": 1.4,
   "min_prices_source": 1,
   "addresses": {
-    "MoCMedianizer": "0x6951020041bFA2565877BF0eaF7f5DF039b490dC",
-    "PriceFeed": "0xb913c7494b918ED637D4DF1308E1b7fF820b75b6"
+    "MoCMedianizer": "0x0643459F863230CFe6e830899909b8752a523E20",
+    "PriceFeed": "0xFD5808FCB953431Cb994c7F3650782f3F550ee68"
   }
 }

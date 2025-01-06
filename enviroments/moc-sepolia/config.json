@@ -1,11 +1,11 @@
 {
-  "uri": "https://eth-sepolia.public.blastapi.io/",
+  "uri": "https://sepolia.drpc.org",
   "chain_id": 11155111,
   "app_mode": "MoCETH",
   "debug": false,
   "tasks": {
     "price_feed": {
-      "interval": 1,
+      "interval": 40,
       "wait_timeout": 120,
       "gas_limit": 200000
     }
@@ -13,16 +13,16 @@
   "max_pending_replace_txs": 2,
   "timeout_pending_tx": 180,
   "timeout_pending_replace_tx": 120,
-  "gas_price": 13500000000, 
+  "gas_price": 5500000000,
   "gas_price_multiply_factor": 1.0001,
-  "is_simulation": false,
+  "is_simulation": true,
   "block_expiration": 600,
   "price_variation_write_blockchain": 0.001,
   "price_variation_re_write_blockchain": 0.001,
   "re_post_gas_price_increment": 1.4,
   "min_prices_source": 1,
   "addresses": {
-    "MoCMedianizer": "",
-    "PriceFeed": ""
+    "MoCMedianizer": "0x0643459F863230CFe6e830899909b8752a523E20",
+    "PriceFeed": "0xFD5808FCB953431Cb994c7F3650782f3F550ee68"
   }
 }

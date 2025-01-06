@@ -255,7 +255,7 @@ class ConnectionManager(BaseConnectionManager):
                                                         private_key=pk)
 
         transaction_hash = self.web3.eth.send_raw_transaction(
-            signed.rawTransaction)
+            signed.raw_transaction)
 
         return transaction_hash
 
