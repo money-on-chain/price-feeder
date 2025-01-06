@@ -327,7 +327,7 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
                     timeout = datetime.timedelta(seconds=timeout_waiting)
 
                     log.error("Task :: {0} :: {1} [{2}] Elapsed: [{3}] Timeout: [{4}]".format(
-                        task.task_name, label_timeout, Web3.from_wei(tx['hash'], 'gwei'), elapsed.seconds, timeout))
+                        task.task_name, label_timeout, tx['hash'], elapsed.seconds, timeout))
 
                     clear = True
 
