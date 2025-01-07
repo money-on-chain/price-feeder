@@ -5,24 +5,24 @@
   "debug": false,
   "tasks": {
     "price_feed": {
-      "interval": 40,
+      "interval": 50,
       "wait_timeout": 120,
       "gas_limit": 200000
     }
   },
-  "max_pending_replace_txs": 1,
+  "max_pending_replace_txs": 0,
   "timeout_pending_tx": 180,
   "timeout_pending_replace_tx": 120,
   "gas_price": 5500000000,
   "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
-  "block_expiration": 600,
-  "price_variation_write_blockchain": 0.007,
-  "price_variation_re_write_blockchain": 0.007,
+  "block_expiration": 900,
+  "price_variation_write_blockchain": 0.008,
+  "price_variation_re_write_blockchain": 0.008,
   "re_post_gas_price_increment": 1.4,
   "min_prices_source": 1,
   "addresses": {
     "MoCMedianizer": "0x0643459F863230CFe6e830899909b8752a523E20",
-    "PriceFeed": "0xFD5808FCB953431Cb994c7F3650782f3F550ee68"
+    "PriceFeed": "0xBdB274B27e34dF61851E78b9C6DC09E084c6CC9e"
   }
 }
