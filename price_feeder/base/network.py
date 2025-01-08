@@ -241,8 +241,9 @@ class ConnectionManager(BaseConnectionManager):
         transaction_dict = {
             'chainId': self.chain_id,
             'nonce': nonce,
-            'gasPrice': gas_price,
-            'value': value
+            'value': value,
+            'maxFeePerGas': max_fee_per_gas,
+            'maxPriorityFeePerGas': max_priority_fee_per_gas
         }
 
         if gas_limit:

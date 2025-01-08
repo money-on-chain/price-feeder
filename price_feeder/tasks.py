@@ -28,7 +28,7 @@ from .contracts import MoCMedianizer, PriceFeed, MoCStateRRC20
 from .base.main import ConnectionHelperBase
 
 
-__VERSION__ = '3.0.4'
+__VERSION__ = '3.0.5'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -231,19 +231,10 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         # get gas price from node
         node_gas_price = decimal.Decimal(Web3.from_wei(web3.eth.gas_price, 'ether'))
 
-        # fixed gas price
-        gas_price = decimal.Decimal(Web3.from_wei(self.config['gas_price'], 'ether'))
-
-        # the max value between node or fixed gas price
-        using_gas_price = max(node_gas_price, gas_price)
-
-        # Multiply factor of the using gas price
-        calculated_gas_price = using_gas_price * decimal.Decimal(self.config['gas_price_multiply_factor'])
-        # is a price re-post and there is a pending tx, we try to re-post the tx
-
         tx_info = dict()
         tx_info['is_replacement'] = False
-        tx_info['gas_price'] = calculated_gas_price
+        tx_info['gas_price'] = node_gas_price
+        tx_info['max_priority_fee_per_gas'] = self.config['max_priority_fee_per_gas']
         # nonce = web3.eth.get_transaction_count(
         #     self.connection_helper.connection_manager.accounts[0].address)
         nonce = web3.eth.get_transaction_count(
@@ -266,11 +257,9 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return task_result, None
 
             nonce = last_pending_tx['nonce']
-
-            calculated_gas_price = last_pending_tx['gas_price'] * decimal.Decimal(
-                self.config['re_post_gas_price_increment'])
             tx_info['is_replacement'] = True
-            tx_info['gas_price'] = calculated_gas_price
+            tx_info['max_priority_fee_per_gas'] = last_pending_tx['max_priority_fee_per_gas'] * decimal.Decimal(
+                self.config['re_post_gas_price_increment'])
 
         tx_info['nonce'] = nonce
 
@@ -288,7 +277,8 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 int(expiration),
                 Web3.to_checksum_address(address_medianizer),
                 gas_limit=self.config['tasks']['price_feed']['gas_limit'],
-                gas_price=int(calculated_gas_price * 10 ** 18),
+                max_fee_per_gas=self.config['max_fee_per_gas'],
+                max_priority_fee_per_gas=tx_info['max_priority_fee_per_gas'],
                 nonce=nonce
             )
         except ValueError as err:
@@ -309,11 +299,11 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         else:
             caption_log = 'Sending TX'
 
-        log.info("Task :: {0} :: {1} :: Hash: [{2}] Nonce: [{3}] Gas Price: [{4}]".format(task.task_name,
+        log.info("Task :: {0} :: {1} :: Hash: [{2}] Nonce: [{3}] Node Gas Price: [{4}]".format(task.task_name,
                                                                                           caption_log,
                                                                                           Web3.to_hex(tx_info['hash']),
                                                                                           tx_info['nonce'],
-                                                                                          int(calculated_gas_price*10**18)))
+                                                                                          node_gas_price*10**18))
 
         return task_result, tx_info
 
