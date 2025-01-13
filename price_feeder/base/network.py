@@ -34,13 +34,15 @@ class ConnectionManager(BaseConnectionManager):
     def __init__(self,
                  uris=None,
                  request_timeout=180,
-                 chain_id=31
+                 chain_id=31,
+                 allow_cache_requests=True
                  ):
 
         # Parameters
         self.uris = uris
         self.request_timeout = request_timeout
         self.chain_id = chain_id
+        self.allow_cache_requests = allow_cache_requests
 
         # connect to node
         self.web3 = self.connect_node()
@@ -63,6 +65,9 @@ class ConnectionManager(BaseConnectionManager):
 
         self.index_uri = index_uri
         return Web3(Web3.HTTPProvider(current_uri,
+                                      cache_allowed_requests=self.allow_cache_requests,
+                                      cacheable_requests={"eth_chainId", "eth_getBlockByNumber"},
+                                      request_cache_validation_threshold=60 * 60,  # 1 hour
                                       request_kwargs={'timeout': self.request_timeout}))
 
     def scan_accounts(self):

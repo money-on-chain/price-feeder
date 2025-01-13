@@ -28,7 +28,7 @@ from .contracts import MoCMedianizer, PriceFeed, MoCStateRRC20
 from .base.main import ConnectionHelperBase
 
 
-__VERSION__ = '3.0.5'
+__VERSION__ = '3.0.6'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
