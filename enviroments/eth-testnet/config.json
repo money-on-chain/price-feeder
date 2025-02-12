@@ -10,15 +10,15 @@
       "gas_limit": 200000
     }
   },
-  "max_pending_replace_txs": 2,
+  "max_pending_replace_txs": 0,
   "timeout_pending_tx": 600,
   "timeout_pending_replace_tx": 600,
-  "max_fee_per_gas": 80000000000,
-  "max_priority_fee_per_gas": 2000000000,
+  "max_fee_per_gas": 70000000000,
+  "max_priority_fee_per_gas": 800000000,
   "is_simulation": false,
-  "block_expiration": 900,
-  "price_variation_write_blockchain": 0.008,
-  "price_variation_re_write_blockchain": 0.008,
+  "block_expiration": 3600,
+  "price_variation_write_blockchain": 0.02,
+  "price_variation_re_write_blockchain": 0.02,
   "re_post_gas_price_increment": 1.1,
   "min_prices_source": 1,
   "addresses": {
