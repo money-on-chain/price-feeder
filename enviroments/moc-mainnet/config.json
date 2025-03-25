@@ -13,7 +13,7 @@
   "max_pending_replace_txs": 2,
   "timeout_pending_tx": 180,
   "timeout_pending_replace_tx": 120,
-  "gas_price": 65820000,
+  "gas_price": 26300000,
   "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
   "block_expiration": 600,
