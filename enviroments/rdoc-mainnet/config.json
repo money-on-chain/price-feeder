@@ -16,7 +16,7 @@
   "gas_price": 26300000,
   "gas_price_multiply_factor": 1.0001,
   "is_simulation": false,
-  "pair_option": "RIF_USDT",
+  "pair_option": "RIF_USD_TMA",
   "block_expiration": 600,
   "price_variation_write_blockchain": 0.001,
   "price_variation_re_write_blockchain": 0.1,
