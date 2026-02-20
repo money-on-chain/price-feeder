@@ -23,7 +23,7 @@ from .contracts import MoCMedianizer, PriceFeed, MoCState, MoCStateRRC20
 from .base.main import ConnectionHelperBase
 
 
-__VERSION__ = '3.0.1'
+__VERSION__ = '3.0.4'
 
 
 log.info("Starting Price Feeder version {0}".format(__VERSION__))
@@ -524,17 +524,6 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
         # calculate the price variation from the last price from oracle
         price_variation_oracle = abs((price_no_precision / last_price_oracle) - 1)
 
-        # if the price is below the floor, I don't publish it
-        ema = self.contracts_loaded['MoCState'].price_moving_average()
-        price_floor = ema * decimal.Decimal(0.193)
-        under_the_floor = price_floor and price_floor > price_no_precision
-        if under_the_floor:
-            log.error("Task :: {0} :: Price under the floor!. Price: {1} Price Floor: {2} ".format(
-                task.task_name,
-                price_no_precision,
-                price_floor))
-            return task_result
-
         # Accepted variation to write to blockchain
         is_in_range = price_variation_oracle >= decimal.Decimal(price_variation_write_blockchain)
 
@@ -565,10 +554,9 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                  "Is in range replace: [{5}] "
                  "Is in time: [{6}] "
                  "Variation Oracle: [{7:.6}%] "
-                 "Variation Last Time: [{8:.6}%] "
-                 "Floor: [{9:.6}] "
-                 "Last write ago: [{10}] "
-                 "Pending Txs: [{11}]".format(
+                 "Variation Last Time: [{8:.6}%] "                 
+                 "Last write ago: [{9}] "
+                 "Pending Txs: [{10}]".format(
             task.task_name,
                   last_price_oracle,
                   last_price,
@@ -578,7 +566,7 @@ class PriceFeederTaskRIF(PriceFeederTaskBase):
                   is_in_time,
                   price_variation_oracle*100,
                   last_price_variation*100,
-                  price_floor,
+
                   td_delta.seconds,
                   count_pending_txs))
 
