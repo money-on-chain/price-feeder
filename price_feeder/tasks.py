@@ -203,14 +203,8 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         # get gas price from node
         node_gas_price = decimal.Decimal(Web3.from_wei(web3.eth.gas_price, 'ether'))
 
-        # fixed gas price
-        gas_price = decimal.Decimal(Web3.from_wei(self.config['gas_price'], 'ether'))
-
-        # the max value between node or fixed gas price
-        using_gas_price = max(node_gas_price, gas_price)
-
         # Multiply factor of the using gas price
-        calculated_gas_price = using_gas_price * decimal.Decimal(self.config['gas_price_multiply_factor'])
+        calculated_gas_price = node_gas_price * decimal.Decimal(self.config['gas_price_multiply_factor'])
         # is a price re-post and there is a pending tx, we try to re-post the tx
 
         tx_info = dict()
