@@ -12,6 +12,8 @@ from moc_prices_source import get_price, \
     RIF_USD_TB, \
     RIF_USD_WMTB, \
     RIF_USDT, \
+    RIF_USDT_MA, \
+    RIF_USD_TMA, \
     ETH_BTC, \
     USDT_USD, \
     BNB_USDT
@@ -105,6 +107,10 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 return RIF_USD_WMTB
             elif pair_option == 'RIF_USDT':
                 return RIF_USDT
+            elif pair_option == 'RIF_USDT_MA':
+                return RIF_USDT_MA
+            elif pair_option == 'RIF_USD_TMA':
+                return RIF_USD_TMA
             elif pair_option == 'ETH_BTC':
                 return ETH_BTC
             elif pair_option == 'USDT_USD':
