@@ -280,16 +280,17 @@ curl https://api.bithumb.com/public/ticker/rif
  
 https://coinmarketcap.com/api/documentation/v1/#
 
+Use your own CoinMarketCap Pro API key in the examples below. Do not commit API keys to the repository.
 
-API: 1a913b25-14f6-4f04-8414-30c4ef409959
+API: YOUR_API_KEY_HERE
 
-curl -H "X-CMC_PRO_API_KEY: 1a913b25-14f6-4f04-8414-30c4ef409959" -H "Accept: application/json" -d "start=1&limit=5000&convert=USD" -G https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY_HERE" -H "Accept: application/json" -d "start=1&limit=5000&convert=USD" -G https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest
 
-curl -H "X-CMC_PRO_API_KEY: 1a913b25-14f6-4f04-8414-30c4ef409959" -H "Accept: application/json" -d "start=1&limit=5000&convert=USD" -G https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY_HERE" -H "Accept: application/json" -d "start=1&limit=5000&convert=USD" -G https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest
 
 
 ```
-curl -H "X-CMC_PRO_API_KEY: 1a913b25-14f6-4f04-8414-30c4ef409959" -H "Accept: application/json" -d "start=1&limit=1&convert=RIF" -G https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest
+curl -H "X-CMC_PRO_API_KEY: YOUR_API_KEY_HERE" -H "Accept: application/json" -d "start=1&limit=1&convert=RIF" -G https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest
 ```
 
 
