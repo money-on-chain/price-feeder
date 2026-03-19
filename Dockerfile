@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.12
 
 # Autor
 LABEL maintainer='martin.mulone@moneyonchain.com'
@@ -14,8 +14,8 @@ RUN echo $TZ > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata && \
     apt-get clean
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.lock.txt ./
+RUN pip install --no-cache-dir -r requirements.lock.txt
 
 
 RUN mkdir /home/www-data && mkdir /home/www-data/app \
