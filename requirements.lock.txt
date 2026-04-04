@@ -2019,9 +2019,9 @@ urllib3==2.6.3 \
     #   botocore
     #   requests
     #   types-requests
-web3==7.14.1 \
-    --hash=sha256:856dc8517f362aefa75fdc298d975894055565dc866f21279f27fe060b7fb2c3 \
-    --hash=sha256:bec367ba44261f874662aed9b5e138aa7bb907700a30a7580b2264534e88ce12
+web3==7.15.0 \
+    --hash=sha256:2a2bcbab8fcf120c2256ddbdc88fcc80a47c100ad758659a980e9fab66609171 \
+    --hash=sha256:bbeba510aaa4eb3c99662d911db9d2a648ab40f608cf0269065f7db1d1d0b0c0
     # via
     #   -r requirements.txt
     #   moneyonchain-prices-source
