@@ -50,13 +50,24 @@ docker build -t price_feeder -f Dockerfile .
 
 7. Run
 
-Replace **(PRIVATE KEY)** with private key
+Copy the example env file and fill in your values:
+
+```
+cp .env.example .env
+```
+
+Edit `.env` and set at minimum:
+
+```
+ACCOUNT_PK_SECRET=<your_private_key>
+```
+
+Then run:
 
 ```
 docker run -d \
 --name price_feeder_1 \
---env ACCOUNT_PK_SECRET=(PRIVATE KEY) \
---env PRICE_FEEDER_NETWORK=local \
+--env-file .env \
 price_feeder
 ```
 

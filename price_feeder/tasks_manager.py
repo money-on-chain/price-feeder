@@ -268,7 +268,7 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
                                 tx['price_new'],
                                 tx['variation_oracle'],
                                 tx['variation_last_time'],
-                                Web3.to_wei(tx['gas_price'], 'ether'),
+                                Web3.from_wei(tx['gas_price'], 'gwei'),
                                 tx['nonce'],
                                 elapsed.seconds
                             )
@@ -304,7 +304,7 @@ class PendingTransactionsTasksManager(TransactionsTasksManager):
                             tx['price_new'],
                             tx['variation_oracle'],
                             tx['variation_last_time'],
-                            Web3.to_wei(tx['gas_price'], 'ether'),
+                            Web3.from_wei(tx['gas_price'], 'gwei'),
                             tx['nonce'],
                             elapsed.seconds
                         )

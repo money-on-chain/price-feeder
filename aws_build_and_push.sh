@@ -75,11 +75,6 @@ fi
 docker image build -t moc_price_feeder_$ENV -f Dockerfile --build-arg CONFIG=$CONFIG_FILE .
 echo "Build done!"
 
-# login into aws ecr
-$(aws ecr get-login --no-include-email --region $AWS_REGION)
-
-echo "Logging to AWS done!"
-
 docker tag moc_price_feeder_$ENV:latest $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/moc_price_feeder_$ENV:latest
 
 docker push $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/moc_price_feeder_$ENV:latest
