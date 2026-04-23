@@ -80,43 +80,52 @@ Install libraries
 
 There are many networks already preconfigurated see enviroments/ folder.
 
-`export ACCOUNT_PK_SECRET=(Your PK)`
+1. Copy the example env file and fill in your values:
 
-`python app_run_price_feeder.py --config ./enviroments/moc-testnet/config.json`
+```
+cp .env.example .env
+```
 
-**Note:** Replace (Your PK) with your private key owner of the account.
+2. Edit `.env` — at minimum set `ACCOUNT_PK_SECRET`. See `.env.example` for all available options.
+
+3. Load the env file and run:
+
+```
+set -a && source .env && set +a
+python app_run_price_feeder.py --config ./enviroments/moc-testnet/config.json
+```
+
+**Note:** Never pass the private key directly on the command line — it will be stored in your shell history.
 
 **--config:** Path to config.json or json content (string)
-
-#### Custom node instead using of public node
-
-If you want to use your custom private node pass as environment settings, before running price feeder:
-
-`export APP_CONNECTION_URI=https://public-node.rsk.co`
-
-#### Custom config
-
-If you want to use your custom settings, before running price feeder:
-
-`export APP_CONFIG=....`
 
 
 ### Docker (Recommended)
 
-Build, change path to correct environment
+Build, change path to correct environment:
 
 ```
 docker build -t price_feeder -f Dockerfile --build-arg CONFIG=./enviroments/rdoc-testnet/config.json .
 ```
 
-Run, replace ACCOUNT_PK_SECRET  with your private key owner of the account
+1. Copy the example env file and fill in your values:
+
+```
+cp .env.example .env
+```
+
+2. Run using the env file:
 
 ```
 docker run -d \
 --name price_feeder_1 \
---env ACCOUNT_PK_SECRET=asdfasdfasdf \
+--env-file .env \
 price_feeder
 ```
+
+**Note:** Do not pass the private key inline with `--env ACCOUNT_PK_SECRET=...` — it will appear in `docker inspect` output and process listings.
+
+**Production (AWS ECS):** Use ECS `secrets` referencing AWS Secrets Manager or SSM Parameter Store instead of `environment`. This prevents the key from being stored in plaintext in the task definition.
 
 ## Security and Audits
 
