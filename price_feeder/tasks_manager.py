@@ -4,7 +4,6 @@ import functools
 import uuid
 from concurrent.futures import TimeoutError
 import datetime
-from multiprocessing import Manager
 from web3 import Web3, exceptions
 from functools import wraps
 
@@ -112,14 +111,15 @@ class TransactionsTasksManager:
     def start_loop(self):
 
         log.info("Start Task jobs loop")
-        global_manager = Manager().dict()
+        global_manager = {}
 
-        with ThreadPool(max_workers=self.max_workers, max_tasks=self.max_tasks) as pool:
+        with ThreadPool(max_workers=self.max_workers) as pool:
             try:
                 while True:
                     if self.tasks:
                         for key in self.tasks:
                             self.schedule_task(pool, self.tasks[key], global_manager=global_manager)
+                    sleep(0.5)
             except TerminateSignal:
                 log.info("Terminal Signal received... Going to shutdown... stop pooling now!")
                 #pool.stop()
