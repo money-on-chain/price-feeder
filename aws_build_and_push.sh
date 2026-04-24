@@ -9,11 +9,8 @@ while getopts ":e:c:i:r:" o; do
     case "${o}" in
         e)
             e=${OPTARG}
-             ((e == "bnb-testnet" || e == "moc-alphatestnet" || e == "moc-testnet" || e == "moc-mainnet" || e == "rdoc-testnet" || e == "rdoc-mainnet" || e == "rdoc-mainnet-backup" || e == "eth-testnet" || e == "eth-mainnet" || e == "tether-testnet" || e == "tether-mainnet"  )) || usage
+             ((e == "moc-alphatestnet" || e == "moc-testnet" || e == "moc-mainnet" || e == "rdoc-testnet" || e == "rdoc-mainnet" || e == "rdoc-mainnet-backup" )) || usage
             case $e in
-                bnb-testnet)
-                    ENV=$e
-                    ;;
                 moc-alphatestnet)
                     ENV=$e
                     ;;
@@ -30,18 +27,6 @@ while getopts ":e:c:i:r:" o; do
                     ENV=$e
                     ;;
                 rdoc-mainnet-backup)
-                    ENV=$e
-                    ;;
-                eth-testnet)
-                    ENV=$e
-                    ;;
-                eth-mainnet)
-                    ENV=$e
-                    ;;
-                tether-testnet)
-                    ENV=$e
-                    ;;
-                tether-mainnet)
                     ENV=$e
                     ;;
                 *)
