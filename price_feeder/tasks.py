@@ -253,18 +253,25 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
         # set the precision to price
         price_to_set = price_no_precision * 10 ** 18
 
+        simulate = self.config.get('simulate', False)
+
         try:
             # send transaction to the price feeder
             tx_hash = self.contracts_loaded["PriceFeed"].post(
                 int(price_to_set),
                 int(expiration),
                 Web3.to_checksum_address(address_medianizer),
-                gas_limit=self.config['tasks']['price_feed']['gas_limit'],
+                gas_limit=self.config['tasks']['price_feed'].get('gas_limit') or None,
                 gas_price=int(calculated_gas_price * 10 ** 18),
-                nonce=nonce
+                nonce=nonce,
+                simulate=simulate
             )
         except ValueError as err:
             log.error("Task :: {0} :: Error sending post price transaction! \n {1}".format(task.task_name, err))
+            return task_result, None
+
+        if simulate:
+            log.info("Task :: {0} :: Simulate mode ON — tx was not sent.".format(task.task_name))
             return task_result, None
 
         # save the last price to compare
