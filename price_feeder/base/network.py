@@ -229,8 +229,11 @@ class ConnectionManager(BaseConnectionManager):
             nonce=None,
             gas_price=None,
             max_fee_per_gas=None,
-            max_priority_fee_per_gas=None):
-        """Contract agnostic transaction function with extras"""
+            max_priority_fee_per_gas=None,
+            simulate=False):
+        """Contract agnostic transaction function with extras.
+        simulate=True runs estimate_gas only — no transaction is sent (dry-run mode).
+        """
 
         if not default_account:
             default_account = self.default_account
@@ -243,15 +246,28 @@ class ConnectionManager(BaseConnectionManager):
         if not gas_price:
             gas_price = self.gas_price
 
+        # Simulate via estimate_gas — raises ContractLogicError if tx would revert
+        estimate_call = {
+            'from': self.accounts[default_account].address,
+            'value': value,
+            'gasPrice': gas_price
+        }
+        if gas_limit:
+            estimate_call['gas'] = gas_limit
+        estimated_gas = built_fxn.estimate_gas(estimate_call)
+        self.log.info("Estimated gas: {}".format(estimated_gas))
+
+        if simulate:
+            self.log.info("Simulate mode: tx NOT sent. Estimated gas: {}".format(estimated_gas))
+            return None
+
         transaction_dict = {
             'chainId': self.chain_id,
             'nonce': nonce,
             'gasPrice': gas_price,
-            'value': value
+            'value': value,
+            'gas': gas_limit if gas_limit else int(estimated_gas * 1.2)
         }
-
-        if gas_limit:
-            transaction_dict['gas'] = gas_limit
 
         transaction = built_fxn.build_transaction(transaction_dict)
 

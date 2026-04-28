@@ -6,11 +6,10 @@
   "tasks": {
     "price_feed": {
       "interval": 1,
-      "wait_timeout": 120,
-      "gas_limit": 200000
+      "wait_timeout": 120
     }
   },
-  "max_pending_replace_txs": 3,
+  "max_pending_replace_txs": 1,
   "timeout_pending_tx": 180,
   "timeout_pending_replace_tx": 120,
   "gas_price": 26300000,
