@@ -9,11 +9,8 @@ while getopts ":e:c:i:r:" o; do
     case "${o}" in
         e)
             e=${OPTARG}
-             ((e == "bnb-testnet" || e == "moc-alphatestnet" || e == "moc-testnet" || e == "moc-mainnet" || e == "rdoc-testnet" || e == "rdoc-mainnet" || e == "rdoc-mainnet-backup" || e == "eth-testnet" || e == "eth-mainnet" || e == "tether-testnet" || e == "tether-mainnet"  )) || usage
+             ((e == "moc-alphatestnet" || e == "moc-testnet" || e == "moc-mainnet" || e == "rdoc-testnet" || e == "rdoc-mainnet" || e == "rdoc-mainnet-backup" )) || usage
             case $e in
-                bnb-testnet)
-                    ENV=$e
-                    ;;
                 moc-alphatestnet)
                     ENV=$e
                     ;;
@@ -30,18 +27,6 @@ while getopts ":e:c:i:r:" o; do
                     ENV=$e
                     ;;
                 rdoc-mainnet-backup)
-                    ENV=$e
-                    ;;
-                eth-testnet)
-                    ENV=$e
-                    ;;
-                eth-mainnet)
-                    ENV=$e
-                    ;;
-                tether-testnet)
-                    ENV=$e
-                    ;;
-                tether-mainnet)
                     ENV=$e
                     ;;
                 *)
@@ -74,11 +59,6 @@ fi
 
 docker image build -t moc_price_feeder_$ENV -f Dockerfile --build-arg CONFIG=$CONFIG_FILE .
 echo "Build done!"
-
-# login into aws ecr
-$(aws ecr get-login --no-include-email --region $AWS_REGION)
-
-echo "Logging to AWS done!"
 
 docker tag moc_price_feeder_$ENV:latest $AWS_ID.dkr.ecr.$AWS_REGION.amazonaws.com/moc_price_feeder_$ENV:latest
 

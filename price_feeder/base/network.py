@@ -77,14 +77,14 @@ class ConnectionManager(BaseConnectionManager):
 
         if 'ACCOUNT_PK_SECRET' in os.environ:
             # obtain from environment if exist instead
-            private_key = os.environ['ACCOUNT_PK_SECRET']
+            private_key = os.environ.pop('ACCOUNT_PK_SECRET').strip()
 
             l_priv = private_key.split(',')
             if len(l_priv) > 1:
                 # this is a method:
                 # ACCOUNT_PK_SECRET=PK1,PK2,PK3
                 for a_priv in l_priv:
-                    account = Account().from_key(a_priv)
+                    account = Account().from_key(a_priv.strip())
                     accounts.append(account)
             else:
                 # Simple PK: ACCOUNT_PK_SECRET=PK
@@ -96,7 +96,7 @@ class ConnectionManager(BaseConnectionManager):
             for numb in range(1, 10):
                 env_pk = 'ACCOUNT_PK_SECRET_{}'.format(numb)
                 if env_pk in os.environ:
-                    private_key = os.environ[env_pk]
+                    private_key = os.environ.pop(env_pk).strip()
                     account = Account().from_key(private_key)
                     accounts.append(account)
 
@@ -229,8 +229,11 @@ class ConnectionManager(BaseConnectionManager):
             nonce=None,
             gas_price=None,
             max_fee_per_gas=None,
-            max_priority_fee_per_gas=None):
-        """Contract agnostic transaction function with extras"""
+            max_priority_fee_per_gas=None,
+            simulate=False):
+        """Contract agnostic transaction function with extras.
+        simulate=True runs estimate_gas only — no transaction is sent (dry-run mode).
+        """
 
         if not default_account:
             default_account = self.default_account
@@ -243,15 +246,28 @@ class ConnectionManager(BaseConnectionManager):
         if not gas_price:
             gas_price = self.gas_price
 
+        # Simulate via estimate_gas — raises ContractLogicError if tx would revert
+        estimate_call = {
+            'from': self.accounts[default_account].address,
+            'value': value,
+            'gasPrice': gas_price
+        }
+        if gas_limit:
+            estimate_call['gas'] = gas_limit
+        estimated_gas = built_fxn.estimate_gas(estimate_call)
+        self.log.info("Estimated gas: {}".format(estimated_gas))
+
+        if simulate:
+            self.log.info("Simulate mode: tx NOT sent. Estimated gas: {}".format(estimated_gas))
+            return None
+
         transaction_dict = {
             'chainId': self.chain_id,
             'nonce': nonce,
             'gasPrice': gas_price,
-            'value': value
+            'value': value,
+            'gas': gas_limit if gas_limit else int(estimated_gas * 1.2)
         }
-
-        if gas_limit:
-            transaction_dict['gas'] = gas_limit
 
         transaction = built_fxn.build_transaction(transaction_dict)
 
