@@ -266,7 +266,7 @@ class PriceFeederTaskBase(PendingTransactionsTasksManager):
                 nonce=nonce,
                 simulate=simulate
             )
-        except ValueError as err:
+        except (ValueError, exceptions.Web3RPCError) as err:
             log.error("Task :: {0} :: Error sending post price transaction! \n {1}".format(task.task_name, err))
             return task_result, None
 
